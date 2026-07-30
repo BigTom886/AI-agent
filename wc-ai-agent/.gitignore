@@ -1,0 +1,19 @@
+# Maven 构建输出
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+
+# Maven Wrapper（可选，如果团队都有 Maven 就忽略，没有则上传）
+.mvn/
+mvnw
+mvnw.cmd
