@@ -1,10 +1,15 @@
-
 spring:
   application:
     name: wc-ai-agent
-
+  ai:
+    openai:
+      api-key: sk-922519c8fc75440d81c81d5fcb766dfe
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+          model: qwen3.7-plus
 server:
-  port: 8123
+  port: 8222
   servlet:
     context-path: /api
 
