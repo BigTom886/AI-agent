@@ -8,6 +8,7 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 /**
  * 恋爱顾问应用 —— 基于 Spring AI ChatClient 与大模型交互
@@ -17,19 +18,19 @@ import lombok.extern.slf4j.Slf4j;
  * 向 AI 模型发送提示词并获取响应，设计理念类似于 Spring WebFlux 中的 WebClient。
  *
  * 核心组件：
- * - ChatModel  —— 底层模型适配器，本项目通过 OpenAI 兼容模式接入 DashScope（通义千问）
- * - Advisors   —— 拦截器链，类似 Servlet Filter，可在请求前后做增强（如记忆、日志、重试等）
+ * - ChatModel —— 底层模型适配器，本项目通过 OpenAI 兼容模式接入 DashScope（通义千问）
+ * - Advisors —— 拦截器链，类似 Servlet Filter，可在请求前后做增强（如记忆、日志、重试等）
  * - ChatMemory —— 对话记忆，维护多轮对话上下文
  *
  * ChatClient 关键 API 速览：
- * - ChatClient.builder(chatModel)  → 创建构建器，绑定底层 ChatModel
- * - .defaultSystem("...")          → 设置默认系统提示词
- * - .defaultAdvisors(...)          → 注册默认 Advisor（拦截器）
- * - .prompt().user("...")          → 设置用户消息
- * - .prompt().system("...")        → 设置本次系统消息（覆盖默认）
- * - .call()                        → 同步调用，返回 ChatResponse
- * - .stream()                      → 流式调用，返回 Flux<String>
- * - .content()                     → 从响应中提取纯文本内容
+ * - ChatClient.builder(chatModel) → 创建构建器，绑定底层 ChatModel
+ * - .defaultSystem("...") → 设置默认系统提示词
+ * - .defaultAdvisors(...) → 注册默认 Advisor（拦截器）
+ * - .prompt().user("...") → 设置用户消息
+ * - .prompt().system("...") → 设置本次系统消息（覆盖默认）
+ * - .call() → 同步调用，返回 ChatResponse
+ * - .stream() → 流式调用，返回 Flux<String>
+ * - .content() → 从响应中提取纯文本内容
  */
 @Component
 @Slf4j
@@ -42,7 +43,7 @@ public class LoveApp {
      * 对话记忆 —— 基于滑动窗口的实现
      * MessageWindowChatMemory 会保留最近 N 轮对话，避免上下文过长导致 token 超限
      */
-    ChatMemory chatMemory = MessageWindowChatMemory.builder().build();
+    ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(1).build();
 
     /**
      * 系统提示词 —— 定义 AI 的角色和行为规范
@@ -68,36 +69,36 @@ public class LoveApp {
      */
     public LoveApp(ChatModel chatModel) {
         this.chatClient = ChatClient.builder(chatModel)
-                        // 设置默认系统提示词，定义 AI 的角色和行为
-                        .defaultSystem(SYSTEM_PROMPT)
-                        // 注册对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
-                        .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
-                        .build();
+                // 设置默认系统提示词，定义 AI 的角色和行为
+                .defaultSystem(SYSTEM_PROMPT)
+                // 注册对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .build();
     }
 
     /**
      * 执行对话 —— 向 AI 模型发送用户输入并返回文本响应
      *
      * 调用链路解析：
-     * 1. prompt()                        → 创建 Prompt 构建器
-     * 2. .user(userInput)                → 设置用户消息内容
-     * 3. .advisors(a -> a.param(...))    → 运行时向 MessageChatMemoryAdvisor 传入会话 ID，
-     *                                      让它按会话隔离记忆（不同 chatId 的对话互不干扰）
-     * 4. .call()                         → 同步调用 AI 模型（另有 .stream() 用于流式响应）
-     * 5. .content()                      → 从 ChatResponse 中提取纯文本内容
+     * 1. prompt() → 创建 Prompt 构建器
+     * 2. .user(userInput) → 设置用户消息内容
+     * 3. .advisors(a -> a.param(...)) → 运行时向 MessageChatMemoryAdvisor 传入会话 ID，
+     * 让它按会话隔离记忆（不同 chatId 的对话互不干扰）
+     * 4. .call() → 同步调用 AI 模型（另有 .stream() 用于流式响应）
+     * 5. .content() → 从 ChatResponse 中提取纯文本内容
      *
      * @param userInput 用户输入的文本
      * @param chatId    对话 ID（用于区分不同会话的记忆）
      * @return AI 模型的文本响应
      */
-    String doChat(String userInput, String chatId) {
+    Flux<String> doChat(String userInput, String chatId) {
 
         String conversationId = chatId;
 
         return this.chatClient.prompt()
-        .user(userInput)
-        .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
-        .call()
-        .content();
+                .user(userInput)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .stream() // stream()流式返回 call()同步返回
+                .content();
     }
 }
