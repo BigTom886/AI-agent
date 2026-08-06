@@ -56,7 +56,7 @@ public class Re2Advisor implements CallAdvisor, StreamAdvisor
         System.out.println("Re2Advisor: 原始用户消息：" + userText);
 
         // 2.拼接重读提示词
-        String re2Text = userText + "\nRead the question again: " + userText;
+        String re2Text = userText + "   Read the question again: " + userText;
 
         // 3.构建新的 UserMessage（只替换最后一个用户消息）
         UserMessage newUserMessage = UserMessage.builder().text(re2Text).build();

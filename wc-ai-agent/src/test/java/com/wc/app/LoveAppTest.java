@@ -3,10 +3,13 @@ package com.wc.app;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import cn.hutool.core.lang.UUID;
 
 @SpringBootTest
 public class LoveAppTest
@@ -27,7 +30,7 @@ public class LoveAppTest
         // 两轮对话必须用同一个 chatId，MessageChatMemoryAdvisor 才会携带历史消息
 
         // 同步调用
-        String result = loveApp.doChat("你好，我是韩跑跑", "001");
+        // String result = loveApp.doChat("你好，我是韩跑跑", "001");
         // System.out.println("AI 回复：" + result);
 
         String result1 = loveApp.doChat("我是谁？", "001");
@@ -45,4 +48,18 @@ public class LoveAppTest
          * 
          */
     }
+
+    @Test
+    void doChatWithReport()
+    {
+
+        String chatId = UUID.randomUUID().toString();
+        // 第一轮
+        String message = "你好，我是豆包，我想让另一半（用户）更爱我，但我不知道该怎么做";
+        LoveApp.LoveReport loveReport = loveApp.generateLoveReport(message, chatId);
+        Assertions.assertNotNull(loveReport);
+    }
+
 }
+
+// 12.13 使用deepseek

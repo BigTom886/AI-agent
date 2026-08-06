@@ -8,6 +8,12 @@ spring:
       chat:
         options:
           model: qwen3.7-plus
+
+# 日志级别配置：确保 com.wc 包下的 INFO 日志能正常输出
+logging:
+  level:
+    root: INFO
+    com.wc: DEBUG
 server:
   port: 8222
   servlet:

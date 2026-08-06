@@ -1,5 +1,7 @@
 package com.wc.app;
 
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -7,6 +9,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Component;
 
+import com.wc.chatmemory.FileBasedChatMemory;
 import com.wc.demo.invoke.LoggingAdvisor;
 import com.wc.demo.invoke.Re2Advisor;
 
@@ -32,70 +35,95 @@ import lombok.extern.slf4j.Slf4j;
 public class LoveApp
 {
 
-    /** ChatClient 实例，用于与 AI 模型交互 */
-    private final ChatClient chatClient;
+        /** ChatClient 实例，用于与 AI 模型交互 */
+        private final ChatClient chatClient;
 
-    /**
-     * 对话记忆 —— 基于滑动窗口的实现 MessageWindowChatMemory 会保留最近 N 轮对话，避免上下文过长导致 token 超限
-     */
-    ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(10).build();
+        /**
+         * 对话记忆 —— 基于滑动窗口的实现 MessageWindowChatMemory 会保留最近 N 轮对话，避免上下文过长导致 token 超限
+         */
+        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(10).build();
 
-    /**
-     * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
-     */
-    private static final String SYSTEM_PROMPT = """
-            你是一个恋爱顾问，名字叫小爱。你的职责是：
-            1. 用温暖、幽默的语气回答用户的恋爱问题
-            2. 给出实用、真诚的建议，不要说空话
-            3. 如果用户的问题超出恋爱范畴，礼貌地引导回话题
-            """;
+        /**
+         * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
+         */
+        private static final String SYSTEM_PROMPT = "你是一个恋爱顾问，名字叫小爱。";
 
-    /**
-     * 构造函数 —— 注入 ChatModel 并构建 ChatClient
-     *
-     * Spring AI 自动配置会根据 application.yml 中的模型配置注入 ChatModel Bean， 然后我们手动构建
-     * ChatClient 来添加 Advisor 链（如对话记忆增强器）。
-     *
-     * 为什么不直接注入 ChatClient？因为自动配置的 ChatClient 不带 Advisor， 我们需要通过 builder 自定义添加
-     * MessageChatMemoryAdvisor。
-     *
-     * @param chatModel Spring AI 自动注入的底层模型适配器（DashScope OpenAI 兼容模式）
-     */
-    public LoveApp(ChatModel chatModel)
-    {
-        this.chatClient = ChatClient.builder(chatModel)
-                // 设置默认系统提示词，定义 AI 的角色和行为
-                .defaultSystem(SYSTEM_PROMPT)
-                // 注册对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
-                .defaultAdvisors(
-                        // 重读 Advisor：在用户消息后追加"再读一遍问题"，提升推理质量
-                        new Re2Advisor(),
-                        // 对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
-                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        // 日志 Advisor：在请求前后打印日志
-                        new LoggingAdvisor())
-                .build();
-    }
+        /**
+         * 构造函数 —— 注入 ChatModel 并构建 ChatClient
+         *
+         * Spring AI 自动配置会根据 application.yml 中的模型配置注入 ChatModel Bean， 然后我们手动构建
+         * ChatClient 来添加 Advisor 链（如对话记忆增强器）。
+         *
+         * 为什么不直接注入 ChatClient？因为自动配置的 ChatClient 不带 Advisor， 我们需要通过 builder 自定义添加
+         * MessageChatMemoryAdvisor。
+         *
+         * @param chatModel Spring AI 自动注入的底层模型适配器（DashScope OpenAI 兼容模式）
+         */
+        public LoveApp(ChatModel chatModel)
+        {
 
-    /**
-     * 执行对话 —— 向 AI 模型发送用户输入并返回文本响应
-     *
-     * 调用链路解析： 1. prompt() → 创建 Prompt 构建器 2. .user(userInput) → 设置用户消息内容 3.
-     * .advisors(a -> a.param(...)) → 运行时向 MessageChatMemoryAdvisor 传入会话 ID，
-     * 让它按会话隔离记忆（不同 chatId 的对话互不干扰） 4. .call() → 同步调用 AI 模型（另有 .stream() 用于流式响应） 5.
-     * .content() → 从 ChatResponse 中提取纯文本内容
-     *
-     * @param userInput 用户输入的文本
-     * @param chatId 对话 ID（用于区分不同会话的记忆）
-     * @return AI 模型的文本响应
-     */
-    String doChat(String userInput, String chatId)
-    {
+                // 初始化基于文件的对话记忆
+                String memoryDir = System.getProperty("user.dir") + "/chat_memory"; // 存储对话记忆的目录
+                // System.out.println("==== LoveApp 构造器被调用 ====");
 
-        String conversationId = chatId;
+                log.info("初始化对话记忆目录: {}", memoryDir);
+                ChatMemory fileBasedChatMemory = new FileBasedChatMemory(memoryDir);
 
-        return this.chatClient.prompt().user(userInput)
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call() // stream()流式返回 call()同步返回
-                .content();
-    }
+                this.chatClient = ChatClient.builder(chatModel)
+                                // 设置默认系统提示词，定义 AI 的角色和行为
+                                .defaultSystem(SYSTEM_PROMPT)
+                                // 注册对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
+                                .defaultAdvisors(
+                                                // 重读 Advisor：在用户消息后追加"再读一遍问题"，提升推理质量
+                                                // new Re2Advisor(),
+                                                // 对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
+                                                MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build(),
+                                                // 日志 Advisor：在请求前后打印日志
+                                                new LoggingAdvisor())
+                                .build();
+        }
+
+        /**
+         * 执行对话 —— 向 AI 模型发送用户输入并返回文本响应
+         *
+         * 调用链路解析： 1. prompt() → 创建 Prompt 构建器 2. .user(userInput) → 设置用户消息内容 3.
+         * .advisors(a -> a.param(...)) → 运行时向 MessageChatMemoryAdvisor 传入会话 ID，
+         * 让它按会话隔离记忆（不同 chatId 的对话互不干扰） 4. .call() → 同步调用 AI 模型（另有 .stream() 用于流式响应） 5.
+         * .content() → 从 ChatResponse 中提取纯文本内容
+         *
+         * @param userInput 用户输入的文本
+         * @param chatId 对话 ID（用于区分不同会话的记忆）
+         * @return AI 模型的文本响应
+         */
+        String doChat(String userInput, String chatId)
+        {
+
+                String conversationId = chatId;
+
+                return this.chatClient.prompt().user(userInput)
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call() // stream()流式返回
+                                                                                                           // call()同步返回
+                                .content();
+        }
+
+        // 恋爱报告类
+        record LoveReport(String title, List<String> suggestions)
+        {
+        }
+
+        public LoveReport generateLoveReport(String userInput, String chatId)
+        {
+                String conversationId = chatId;
+
+                String reportText = this.chatClient.prompt()
+                                .system(SYSTEM_PROMPT + " 每次对话后都要生成恋爱结果，标题为{用户名}的恋爱报告，内容为建议列表").user(userInput)
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call().content();
+
+                // 将报告文本按行拆分为建议列表
+                List<String> suggestions = reportText.lines().toList();
+
+                // log.info("生成恋爱报告: {}", suggestions);
+
+                return new LoveReport("恋爱顾问报告", suggestions);
+        }
 }
