@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(jar xf *)",
+      "Bash(javap -p '/tmp/org/springframework/ai/chat/prompt/Prompt$Builder.class')"
+    ]
+  }
+}
