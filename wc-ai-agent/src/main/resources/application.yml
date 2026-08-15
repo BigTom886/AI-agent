@@ -8,6 +8,11 @@ spring:
       chat:
         options:
           model: qwen3.7-plus
+      # DashScope 的 OpenAI 兼容接口没有 text-embedding-ada-002；
+      # 这里指定 DashScope 的 text-embedding-v3（维度 1024，可按需改 v1/v2）
+      embedding:
+        options:
+          model: qwen3.7-text-embedding
 
 # 日志级别配置：确保 com.wc 包下的 INFO 日志能正常输出
 logging:

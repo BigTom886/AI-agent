@@ -3,16 +3,22 @@ package com.wc.app;
 import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 import com.wc.chatmemory.FileBasedChatMemory;
 import com.wc.demo.invoke.LoggingAdvisor;
 import com.wc.demo.invoke.Re2Advisor;
 
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,9 +37,9 @@ import lombok.extern.slf4j.Slf4j;
  * 设置本次系统消息（覆盖默认） - .call() → 同步调用，返回 ChatResponse - .stream() → 流式调用，返回
  * Flux<String> - .content() → 从响应中提取纯文本内容
  */
-@Component @Slf4j
-public class LoveApp
-{
+@Component
+@Slf4j
+public class LoveApp {
 
         /** ChatClient 实例，用于与 AI 模型交互 */
         private final ChatClient chatClient;
@@ -41,7 +47,7 @@ public class LoveApp
         /**
          * 对话记忆 —— 基于滑动窗口的实现 MessageWindowChatMemory 会保留最近 N 轮对话，避免上下文过长导致 token 超限
          */
-        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(10).build();
+        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(2).build();
 
         /**
          * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
@@ -59,8 +65,7 @@ public class LoveApp
          *
          * @param chatModel Spring AI 自动注入的底层模型适配器（DashScope OpenAI 兼容模式）
          */
-        public LoveApp(ChatModel chatModel)
-        {
+        public LoveApp(ChatModel chatModel) {
 
                 // 初始化基于文件的对话记忆
                 String memoryDir = System.getProperty("user.dir") + "/chat_memory"; // 存储对话记忆的目录
@@ -92,11 +97,10 @@ public class LoveApp
          * .content() → 从 ChatResponse 中提取纯文本内容
          *
          * @param userInput 用户输入的文本
-         * @param chatId 对话 ID（用于区分不同会话的记忆）
+         * @param chatId    对话 ID（用于区分不同会话的记忆）
          * @return AI 模型的文本响应
          */
-        String doChat(String userInput, String chatId)
-        {
+        String doChat(String userInput, String chatId) {
 
                 String conversationId = chatId;
 
@@ -107,17 +111,22 @@ public class LoveApp
         }
 
         // 恋爱报告类
-        record LoveReport(String title, List<String> suggestions)
-        {
+        record LoveReport(String title, List<String> suggestions) {
         }
 
-        public LoveReport generateLoveReport(String userInput, String chatId)
-        {
+        public LoveReport generateLoveReport(String userInput, String chatId) {
                 String conversationId = chatId;
 
                 String reportText = this.chatClient.prompt()
                                 .system(SYSTEM_PROMPT + " 每次对话后都要生成恋爱结果，标题为{用户名}的恋爱报告，内容为建议列表").user(userInput)
                                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call().content();
+
+                // .advisors(new Consumer<AdvisorSpec>() { ←正确接口名
+                // @Override ← 重写的是 Consumer#accept
+                // public void accept(AdvisorSpec a) { ← 参数类型是 AdvisorSpec
+                // a.param(ChatMemory.CONVERSATION_ID, conversationId); ← 这是普通调用，不是 override
+                // }
+                // })
 
                 // 将报告文本按行拆分为建议列表
                 List<String> suggestions = reportText.lines().toList();
@@ -126,4 +135,30 @@ public class LoveApp
 
                 return new LoveReport("恋爱顾问报告", suggestions);
         }
+
+        @Resource
+        private VectorStore loveAppVectorStore;
+
+        public String doChatWithRag(String message, String chatId) {
+                ChatResponse chatResponse = chatClient
+                                .prompt()
+                                .user(message)
+                                // 1.1.8 起，CHAT_MEMORY_RETRIEVE_SIZE_KEY 已废弃；
+                                // 窗口大小由 ChatMemory 实现（如 MessageWindowChatMemory.maxMessages）控制
+                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
+                                // 开启日志，便于观察效果(chatClient已经注册过LoggingAdvisor)
+                                // .advisors(new LoggingAdvisor())
+                                // 应用知识库问答（1.1.x 起 QuestionAnswerAdvisor 被模块化的 RetrievalAugmentationAdvisor 替代）
+                                .advisors(RetrievalAugmentationAdvisor.builder()
+                                                .documentRetriever(VectorStoreDocumentRetriever.builder()
+                                                                .vectorStore(loveAppVectorStore)
+                                                                .build())
+                                                .build())
+                                .call()
+                                .chatResponse();
+                String content = chatResponse.getResult().getOutput().getText();
+                // log.info("content: {}", content);
+                return content;
+        }
+
 }

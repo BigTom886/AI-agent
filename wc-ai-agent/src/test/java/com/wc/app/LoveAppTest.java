@@ -12,21 +12,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import cn.hutool.core.lang.UUID;
 
 @SpringBootTest
-public class LoveAppTest
-{
+public class LoveAppTest {
 
     @Autowired
     private LoveApp loveApp;
 
     @BeforeAll
-    static void fixEncoding()
-    {
+    static void fixEncoding() {
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
     }
 
     @Test
-    void testDoChat()
-    {
+    void testDoChat() {
         // 两轮对话必须用同一个 chatId，MessageChatMemoryAdvisor 才会携带历史消息
 
         // 同步调用
@@ -50,8 +47,7 @@ public class LoveAppTest
     }
 
     @Test
-    void doChatWithReport()
-    {
+    void doChatWithReport() {
 
         String chatId = UUID.randomUUID().toString();
         // 第一轮
@@ -60,6 +56,13 @@ public class LoveAppTest
         Assertions.assertNotNull(loveReport);
     }
 
+    @Test
+    void doChatWithRag() {
+        String chatId = UUID.randomUUID().toString();
+        String message = "我已经结婚了，但是婚后关系不太亲密，怎么办？";
+        String answer = loveApp.doChatWithRag(message, chatId);
+        Assertions.assertNotNull(answer);
+    }
 }
 
 // 12.13 使用deepseek
