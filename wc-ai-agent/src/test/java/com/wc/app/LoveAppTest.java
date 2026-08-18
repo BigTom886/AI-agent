@@ -2,14 +2,20 @@ package com.wc.app;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import cn.hutool.core.lang.UUID;
+import jakarta.annotation.Resource;
 
 @SpringBootTest
 public class LoveAppTest {
@@ -62,6 +68,26 @@ public class LoveAppTest {
         String message = "我已经结婚了，但是婚后关系不太亲密，怎么办？";
         String answer = loveApp.doChatWithRag(message, chatId);
         Assertions.assertNotNull(answer);
+    }
+
+    @Resource
+    VectorStore pgVectorVectorStore;
+
+    @Test
+    void test11() {
+        List<Document> documents = List.of(
+                new Document(
+                        "Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!!",
+                        Map.of("meta1", "meta1")),
+                new Document("The World is Big and Salvation Lurks Around the Corner"),
+                new Document("You walk forward facing the past and you turn back toward the future.",
+                        Map.of("meta2", "meta2")));
+        // 添加文档
+        pgVectorVectorStore.add(documents);
+        // 相似度查询
+        List<Document> results = pgVectorVectorStore
+                .similaritySearch(SearchRequest.builder().query("Spring").topK(5).build());
+        Assertions.assertNotNull(results);
     }
 }
 
