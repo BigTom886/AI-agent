@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
-class LoveAppDocumentLoader {
+public class LoveAppDocumentLoader {
 
     /**
      * Spring 资源模式解析器，用于按 Ant 风格路径（例如 "classpath:document/*.md"）

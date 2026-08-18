@@ -1,5 +1,6 @@
 package com.wc.app;
 
+import com.wc.rag.LoveAppDocumentLoader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -89,6 +90,28 @@ public class LoveAppTest {
                 .similaritySearch(SearchRequest.builder().query("Spring").topK(5).build());
         Assertions.assertNotNull(results);
     }
+
+    @Resource
+    LoveAppDocumentLoader loveAppDocumentLoader;
+
+    @Test
+    void test22() {
+
+        // List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
+        // // 添加文档
+        // pgVectorVectorStore.add(documents);
+        // 相似度查询
+        List<Document> results = pgVectorVectorStore
+                .similaritySearch(SearchRequest.builder().query("我已经结婚了，但是婚后关系不太亲密，想要找其他人生活，应该怎么办？").topK(5).build());
+        // 打印命中结果：内容 + 元数据（filename 是 loader 写入的，便于溯源到原 markdown）
+        System.out.println("=== similarity search 命中 " + results.size() + " 条 ===");
+        results.forEach(doc -> System.out.println(
+                "[text] " + doc.getText()
+                        + System.lineSeparator()
+                        + "[metadata] " + doc.getMetadata()));
+        Assertions.assertNotNull(results);
+    }
+
 }
 
 // 12.13 使用deepseek
