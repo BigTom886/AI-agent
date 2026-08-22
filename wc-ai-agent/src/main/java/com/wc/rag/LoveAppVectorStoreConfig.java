@@ -9,13 +9,15 @@ import org.springframework.context.annotation.Configuration;
 import jakarta.annotation.Resource;
 
 //@Configuration
-public class LoveAppVectorStoreConfig {
+public class LoveAppVectorStoreConfig
+{
 
     @Resource
     private LoveAppDocumentLoader loveAppDocumentLoader;
 
     @Bean
-    VectorStore loveAppVectorStore(EmbeddingModel dashscopeEmbeddingModel) {
+    VectorStore loveAppVectorStore(EmbeddingModel dashscopeEmbeddingModel)
+    {
         // 构造内存版向量库（基于余弦相似度）
         VectorStore simpleVectorStore = SimpleVectorStore.builder(dashscopeEmbeddingModel).build();
         // ========== 启动期不加载/嵌入文档 ==========

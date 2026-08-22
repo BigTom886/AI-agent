@@ -37,9 +37,9 @@ import lombok.extern.slf4j.Slf4j;
  * 设置本次系统消息（覆盖默认） - .call() → 同步调用，返回 ChatResponse - .stream() → 流式调用，返回
  * Flux<String> - .content() → 从响应中提取纯文本内容
  */
-@Component
-@Slf4j
-public class LoveApp {
+@Component @Slf4j
+public class LoveApp
+{
 
         /** ChatClient 实例，用于与 AI 模型交互 */
         private final ChatClient chatClient;
@@ -65,7 +65,8 @@ public class LoveApp {
          *
          * @param chatModel Spring AI 自动注入的底层模型适配器（DashScope OpenAI 兼容模式）
          */
-        public LoveApp(ChatModel chatModel) {
+        public LoveApp(ChatModel chatModel)
+        {
 
                 // 初始化基于文件的对话记忆
                 String memoryDir = System.getProperty("user.dir") + "/chat_memory"; // 存储对话记忆的目录
@@ -97,10 +98,11 @@ public class LoveApp {
          * .content() → 从 ChatResponse 中提取纯文本内容
          *
          * @param userInput 用户输入的文本
-         * @param chatId    对话 ID（用于区分不同会话的记忆）
+         * @param chatId 对话 ID（用于区分不同会话的记忆）
          * @return AI 模型的文本响应
          */
-        String doChat(String userInput, String chatId) {
+        String doChat(String userInput, String chatId)
+        {
 
                 String conversationId = chatId;
 
@@ -111,10 +113,12 @@ public class LoveApp {
         }
 
         // 恋爱报告类
-        record LoveReport(String title, List<String> suggestions) {
+        record LoveReport(String title, List<String> suggestions)
+        {
         }
 
-        public LoveReport generateLoveReport(String userInput, String chatId) {
+        public LoveReport generateLoveReport(String userInput, String chatId)
+        {
                 String conversationId = chatId;
 
                 String reportText = this.chatClient.prompt()
@@ -139,10 +143,9 @@ public class LoveApp {
         @Resource
         private VectorStore loveAppVectorStore;
 
-        public String doChatWithRag(String message, String chatId) {
-                ChatResponse chatResponse = chatClient
-                                .prompt()
-                                .user(message)
+        public String doChatWithRag(String message, String chatId)
+        {
+                ChatResponse chatResponse = chatClient.prompt().user(message)
                                 // 1.1.8 起，CHAT_MEMORY_RETRIEVE_SIZE_KEY 已废弃；
                                 // 窗口大小由 ChatMemory 实现（如 MessageWindowChatMemory.maxMessages）控制
                                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
@@ -151,11 +154,9 @@ public class LoveApp {
                                 // 应用知识库问答（1.1.x 起 QuestionAnswerAdvisor 被模块化的 RetrievalAugmentationAdvisor 替代）
                                 .advisors(RetrievalAugmentationAdvisor.builder()
                                                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                                                .vectorStore(loveAppVectorStore)
-                                                                .build())
+                                                                .vectorStore(loveAppVectorStore).build())
                                                 .build())
-                                .call()
-                                .chatResponse();
+                                .call().chatResponse();
                 String content = chatResponse.getResult().getOutput().getText();
                 // log.info("content: {}", content);
                 return content;
