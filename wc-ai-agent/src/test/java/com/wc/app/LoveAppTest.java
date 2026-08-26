@@ -1,8 +1,10 @@
 package com.wc.app;
 
+import com.esotericsoftware.minlog.Log;
 import com.wc.demo.rag.MultiQueryExpanderDemo;
 import com.wc.demo.rag.QueryReWriter;
 import com.wc.rag.LoveAppDocumentLoader;
+import com.wc.rag.LoveAppRagCustomAdvisorFactory;
 import com.wc.rag.MyKeywordEnricher;
 import com.wc.rag.MyTokenTextSplitter;
 
@@ -104,9 +106,9 @@ public class LoveAppTest {
     @Test
     void test2() {
 
-        // List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
-        // // 添加文档
-        // pgVectorVectorStore.add(documents);
+        List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
+        // 添加文档
+        pgVectorVectorStore.add(documents);
         // 相似度查询
         List<Document> results = pgVectorVectorStore
                 .similaritySearch(SearchRequest.builder().query("我已经结婚了，但是婚后关系不太亲密，应该怎么办？").topK(5).build());
@@ -145,7 +147,7 @@ public class LoveAppTest {
 
     @Test
     void testQueryExpander() {
-        List<org.springframework.ai.rag.Query> queries = multiQueryExpanderDemo.expand("谁是程序员鱼皮啊啊啊啊？？？？");
+        List<Query> queries = multiQueryExpanderDemo.expand("谁是程序员鱼皮啊啊啊啊？？？？");
     }
 
     @Resource
@@ -156,6 +158,12 @@ public class LoveAppTest {
         String query = queryReWriter.doQueryRewrite("谁是程序员鱼皮啊啊啊啊？？？？");
     }
 
+    @Test
+    void testRagDocument() {
+        String chatId = UUID.randomUUID().toString();
+        String mString = loveApp.doRagAdvisor("我已经结婚了，但是婚后关系不太亲密，应该怎么办？", chatId, "单身");
+        Log.info("mString:" + mString);
+    }
 }
 
 // 12.13 使用deepseek

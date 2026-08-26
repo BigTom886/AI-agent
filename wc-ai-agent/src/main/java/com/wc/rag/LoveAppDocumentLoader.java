@@ -26,9 +26,9 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author wc
  */
-@Component @Slf4j
-public class LoveAppDocumentLoader
-{
+@Component
+@Slf4j
+public class LoveAppDocumentLoader {
 
     /**
      * Spring 资源模式解析器，用于按 Ant 风格路径（例如 "classpath:document/*.md"） 批量加载资源文件。由 Spring
@@ -41,8 +41,7 @@ public class LoveAppDocumentLoader
      *
      * @param resourcePatternResolver Spring 提供的资源模式解析器
      */
-    LoveAppDocumentLoader(ResourcePatternResolver resourcePatternResolver)
-    {
+    LoveAppDocumentLoader(ResourcePatternResolver resourcePatternResolver) {
         this.resourcePatternResolver = resourcePatternResolver;
     }
 
@@ -60,18 +59,15 @@ public class LoveAppDocumentLoader
      *
      * @return 解析得到的全部 Document 列表；若加载失败则返回空列表
      */
-    public List<Document> loadMarkdowns()
-    {
+    public List<Document> loadMarkdowns() {
         // 用于汇总所有 Markdown 文件解析出的 Document 对象
         List<Document> allDocuments = new ArrayList<>();
-        try
-        {
+        try {
             // 按 Ant 路径模式加载 classpath:document/ 下的所有 .md 文件
             // 如需加载其他位置，可修改该路径模式
             Resource[] resources = resourcePatternResolver.getResources("classpath:document/*.md");
             // 遍历每一个 Markdown 资源文件
-            for (Resource resource : resources)
-            {
+            for (Resource resource : resources) {
                 // 获取文件名，作为元数据写入 Document，便于后续溯源
                 String fileName = resource.getFilename();
                 // 构造 Markdown 读取配置：
@@ -92,8 +88,7 @@ public class LoveAppDocumentLoader
                 allDocuments.addAll(reader.get());
                 log.info("====={}", reader);
             }
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             // 资源加载或读取过程中出现 I/O 异常时，记录错误日志并返回已解析的部分（可能为空）
             log.error("Markdown 文档加载失败", e);
         }

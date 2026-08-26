@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import com.wc.chatmemory.FileBasedChatMemory;
 import com.wc.demo.invoke.LoggingAdvisor;
 import com.wc.demo.invoke.Re2Advisor;
+import com.wc.rag.LoveAppRagCustomAdvisorFactory;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -37,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
  * 设置本次系统消息（覆盖默认） - .call() → 同步调用，返回 ChatResponse - .stream() → 流式调用，返回
  * Flux<String> - .content() → 从响应中提取纯文本内容
  */
-@Component @Slf4j
-public class LoveApp
-{
+@Component
+@Slf4j
+public class LoveApp {
 
         /** ChatClient 实例，用于与 AI 模型交互 */
         private final ChatClient chatClient;
@@ -65,8 +67,7 @@ public class LoveApp
          *
          * @param chatModel Spring AI 自动注入的底层模型适配器（DashScope OpenAI 兼容模式）
          */
-        public LoveApp(ChatModel chatModel)
-        {
+        public LoveApp(ChatModel chatModel) {
 
                 // 初始化基于文件的对话记忆
                 String memoryDir = System.getProperty("user.dir") + "/chat_memory"; // 存储对话记忆的目录
@@ -98,11 +99,10 @@ public class LoveApp
          * .content() → 从 ChatResponse 中提取纯文本内容
          *
          * @param userInput 用户输入的文本
-         * @param chatId 对话 ID（用于区分不同会话的记忆）
+         * @param chatId    对话 ID（用于区分不同会话的记忆）
          * @return AI 模型的文本响应
          */
-        String doChat(String userInput, String chatId)
-        {
+        String doChat(String userInput, String chatId) {
 
                 String conversationId = chatId;
 
@@ -113,12 +113,10 @@ public class LoveApp
         }
 
         // 恋爱报告类
-        record LoveReport(String title, List<String> suggestions)
-        {
+        record LoveReport(String title, List<String> suggestions) {
         }
 
-        public LoveReport generateLoveReport(String userInput, String chatId)
-        {
+        public LoveReport generateLoveReport(String userInput, String chatId) {
                 String conversationId = chatId;
 
                 String reportText = this.chatClient.prompt()
@@ -143,8 +141,7 @@ public class LoveApp
         @Resource
         private VectorStore loveAppVectorStore;
 
-        public String doChatWithRag(String message, String chatId)
-        {
+        public String doChatWithRag(String message, String chatId) {
                 ChatResponse chatResponse = chatClient.prompt().user(message)
                                 // 1.1.8 起，CHAT_MEMORY_RETRIEVE_SIZE_KEY 已废弃；
                                 // 窗口大小由 ChatMemory 实现（如 MessageWindowChatMemory.maxMessages）控制
@@ -160,6 +157,39 @@ public class LoveApp
                 String content = chatResponse.getResult().getOutput().getText();
                 // log.info("content: {}", content);
                 return content;
+        }
+
+        /**
+         * 用自定义 RAG Advisor 执行对话 —— 只检索 status 匹配的文档
+         *
+         * @param message 用户输入
+         * @param chatId  会话 ID（用于对话记忆隔离）
+         * @param status  要过滤的文档 status（如 "published"）
+         * @return AI 回复内容
+         */
+
+        @Resource
+        VectorStore pgVectorVectorStore;
+
+        public String doRagAdvisor(String message, String chatId, String status) {
+
+                // 1. 用工厂的静态方法构造自定义 Advisor：
+                // - 过滤 status 字段
+                // - 相似度阈值 0.5
+                // - topK=3
+                Advisor customAdvisor = LoveAppRagCustomAdvisorFactory
+                                .createLoveAppRagCustomAdvisor(pgVectorVectorStore, status);
+
+                // 2. 调 ChatClient，叠加对话记忆 + 自定义 Advisor
+                ChatResponse chatResponse = chatClient.prompt()
+                                .user(message)
+                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)) // 会话记忆
+                                .advisors(customAdvisor) // 自定义 RAG
+                                .call()
+                                .chatResponse();
+
+                // 3. 提取文本内容返回
+                return chatResponse.getResult().getOutput().getText();
         }
 
 }
