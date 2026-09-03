@@ -1,10 +1,6 @@
 package com.wc.app;
 
-import com.esotericsoftware.minlog.Log;
-import com.wc.demo.rag.MultiQueryExpanderDemo;
-import com.wc.demo.rag.QueryReWriter;
 import com.wc.rag.LoveAppDocumentLoader;
-import com.wc.rag.LoveAppRagCustomAdvisorFactory;
 import com.wc.rag.MyKeywordEnricher;
 import com.wc.rag.MyTokenTextSplitter;
 
@@ -17,29 +13,30 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.rag.Query;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import cn.hutool.core.lang.UUID;
-
 import jakarta.annotation.Resource;
 
 @SpringBootTest
-public class LoveAppTest {
+public class LoveAppTest
+{
 
     @Autowired
     private LoveApp loveApp;
 
     @BeforeAll
-    static void fixEncoding() {
+    static void fixEncoding()
+    {
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
     }
 
     @Test
-    void testDoChat() {
+    void testDoChat()
+    {
         // 两轮对话必须用同一个 chatId，MessageChatMemoryAdvisor 才会携带历史消息
 
         // 同步调用
@@ -63,7 +60,8 @@ public class LoveAppTest {
     }
 
     @Test
-    void doChatWithReport() {
+    void doChatWithReport()
+    {
 
         String chatId = UUID.randomUUID().toString();
         // 第一轮
@@ -73,7 +71,8 @@ public class LoveAppTest {
     }
 
     @Test
-    void doChatWithRag() {
+    void doChatWithRag()
+    {
         String chatId = UUID.randomUUID().toString();
         String message = "我已经结婚了，但是婚后关系不太亲密，怎么办？";
         String answer = loveApp.doChatWithRag(message, chatId);
@@ -84,7 +83,8 @@ public class LoveAppTest {
     VectorStore pgVectorVectorStore;
 
     @Test
-    void test1() {
+    void test1()
+    {
         List<Document> documents = List.of(
                 new Document(
                         "Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!!",
@@ -104,11 +104,12 @@ public class LoveAppTest {
     LoveAppDocumentLoader loveAppDocumentLoader;
 
     @Test
-    void test2() {
+    void test2()
+    {
 
-        List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
-        // 添加文档
-        pgVectorVectorStore.add(documents);
+        // List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
+        // // 添加文档
+        // pgVectorVectorStore.add(documents);
         // 相似度查询
         List<Document> results = pgVectorVectorStore
                 .similaritySearch(SearchRequest.builder().query("我已经结婚了，但是婚后关系不太亲密，应该怎么办？").topK(5).build());
@@ -126,7 +127,8 @@ public class LoveAppTest {
     MyKeywordEnricher myKeywordEnricher;
 
     @Test
-    void test3() {
+    void test3()
+    {
         List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
 
         // 自主切分(这里是按token切分，实际可按业务需求自定义切分规则)
@@ -136,34 +138,41 @@ public class LoveAppTest {
         // 利用大模型提取文档块关键信息
         List<Document> enrichedDocuments = myKeywordEnricher.enrichDocunments(documents);
 
-        for (Document doc : enrichedDocuments) {
+        for (Document doc : enrichedDocuments)
+        {
             System.out.println("=== splited document ===");
             System.out.println("[text] " + doc.getText() + System.lineSeparator() + "[metadata] " + doc.getMetadata());
+
         }
     }
 
-    @Resource
-    MultiQueryExpanderDemo multiQueryExpanderDemo;
-
-    @Test
-    void testQueryExpander() {
-        List<Query> queries = multiQueryExpanderDemo.expand("谁是程序员鱼皮啊啊啊啊？？？？");
-    }
-
-    @Resource
-    QueryReWriter queryReWriter;
-
-    @Test
-    void testQueryReWriter() {
-        String query = queryReWriter.doQueryRewrite("谁是程序员鱼皮啊啊啊啊？？？？");
-    }
-
-    @Test
-    void testRagDocument() {
+    private void testMessage(String message)
+    {
         String chatId = UUID.randomUUID().toString();
-        String mString = loveApp.doRagAdvisor("我已经结婚了，但是婚后关系不太亲密，应该怎么办？", chatId, "单身");
-        Log.info("mString:" + mString);
+        String answer = loveApp.doChatWithTools(message, chatId);
+        Assertions.assertNotNull(answer);
     }
-}
 
-// 12.13 使用deepseek
+    @Test
+    void doChatWithTools()
+    {
+        // 测试联网搜索问题的答案
+        // testMessage("周末想带女朋友去上海约会，推荐几个适合情侣的小众打卡地？");
+
+        // // 测试网页抓取：恋爱案例分析
+        // testMessage("最近和对象吵架了，看看编程导航网站（codefather.cn）的其他情侣是怎么解决矛盾的？");
+
+        // // 测试资源下载：图片下载
+        // testMessage("直接下载一张适合做手机壁纸的星空情侣图片文件");
+
+        // // 测试终端操作：执行代码
+        // testMessage("执行 Python3 脚本来生成数据分析报告");
+
+        // // 测试文件操作：保存用户档案
+        // testMessage("保存我的恋爱档案为文件");
+
+        // // 测试 PDF 生成
+        testMessage("生成一份‘七夕约会计划’PDF，包含餐厅预订、活动流程和礼物清单");
+    }
+
+}
