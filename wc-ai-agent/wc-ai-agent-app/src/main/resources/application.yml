@@ -21,18 +21,21 @@ spring:
         max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
     mcp:
       client:
-        # 启动时自动连接这些 stdio MCP 服务器
+        # 关闭 stdio 示例，避免启动时去找那个不存在的 npx 命令
         stdio:
+          enabled: false
+        # SSE 连接列表（Spring AI 自动注入 ToolCallbackProvider）
+        # 重要：url 只写 baseUrl，sse-endpoint 单独配；否则默认会拼成 /sse/sse
+        sse:
           connections:
-            # 示例：连接到一个文件操作 MCP 服务器
-            filesystem:
-              command: npx
-              args:
-                - "-y"
-                - "@modelcontextprotocol/server-filesystem"
-                - "/Users/you/Documents"
-              env:
-                API_KEY: your-api-key
+            pexels-search:
+              url: http://localhost:8081        # 服务端 baseUrl
+              sse-endpoint: /sse                 # 与服务端 spring.ai.mcp.server.sse-endpoint 默认值一致
+        # 可选：客户端公共配置
+        # name: wc-ai-agent-client
+        # version: 1.0.0
+        # request-timeout: 30s
+        # initialized: true   # 启动时立即调用 initialize()
 
   datasource:
     url: jdbc:postgresql://localhost:5432/wc_ai_agent

@@ -15,6 +15,7 @@ import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.wc.chatmemory.FileBasedChatMemory;
@@ -213,6 +214,7 @@ public class LoveApp
         }
 
         @Resource
+        @Qualifier("mcpToolCallbacks") // McpToolCallbackAutoConfiguration#mcpToolCallbacks 定义的 SYNC provider
         private ToolCallbackProvider toolCallbackProvider;
 
         public String doChatWithMcp(String message, String chatId)
@@ -220,7 +222,10 @@ public class LoveApp
                 ChatResponse response = chatClient.prompt().user(message)
                                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                                 // 开启日志，便于观察效果
-                                .advisors(new LoggingAdvisor()).tools(toolCallbackProvider).call().chatResponse();
+                                .advisors(new LoggingAdvisor())
+                                // ⚠️ 必须用 .toolCallbacks()：.tools() 会反射扫描 @Tool 方法，
+                                // 而 ToolCallbackProvider 不是 @Tool POJO，会抛 IllegalStateException。
+                                .toolCallbacks(toolCallbackProvider).call().chatResponse();
                 String content = response.getResult().getOutput().getText();
                 log.info("content: {}", content);
                 return content;

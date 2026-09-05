@@ -97,7 +97,11 @@
             <version>9.1.0</version>
         </dependency>
 
-        <!-- MCP 客户端 -->
+        <!--
+            MCP 客户端 —— 同步（SseHttpClientTransport）。
+            不要同时引入 client-webflux：两个 starter 都会注册 List<NamedClientMcpTransport>，
+            被 McpClientAutoConfiguration.mcpSyncClients 聚合，导致对同一个 URL 建立两条连接。
+        -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-mcp-client</artifactId>
