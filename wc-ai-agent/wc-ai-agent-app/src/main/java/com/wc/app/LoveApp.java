@@ -13,6 +13,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
@@ -110,9 +111,10 @@ public class LoveApp
                 String conversationId = chatId;
 
                 return this.chatClient.prompt().user(userInput)
-                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call() // stream()流式返回
-                                                                                                           // call()同步返回
-                                .content();
+                                // .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call() //
+                                // stream()流式返回
+                                // call()同步返回
+                                .call().content();
         }
 
         // 恋爱报告类
@@ -207,6 +209,20 @@ public class LoveApp
                                 .toolCallbacks(allTools).call().chatResponse();
                 String content = response.getResult().getOutput().getText();
                 // log.info("content: {}", content);
+                return content;
+        }
+
+        @Resource
+        private ToolCallbackProvider toolCallbackProvider;
+
+        public String doChatWithMcp(String message, String chatId)
+        {
+                ChatResponse response = chatClient.prompt().user(message)
+                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
+                                // 开启日志，便于观察效果
+                                .advisors(new LoggingAdvisor()).tools(toolCallbackProvider).call().chatResponse();
+                String content = response.getResult().getOutput().getText();
+                log.info("content: {}", content);
                 return content;
         }
 

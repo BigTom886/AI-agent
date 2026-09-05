@@ -1,190 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.4</version>
-    <relativePath/>
-  </parent>
-
-  <groupId>com.wc</groupId>
-  <artifactId>wc-ai-agent</artifactId>
-  <version>1.0-SNAPSHOT</version>
-
-  <name>wc-ai-agent</name>
-
-  <properties>
-    <java.version>21</java.version>
-  </properties>
-
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-bom</artifactId>
-            <version>1.1.8</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
-
-  <dependencies>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Spring AI OpenAI Starter（通过 DashScope 的 OpenAI 兼容模式接入） -->
-    <dependency>
-      <groupId>org.springframework.ai</groupId>
-      <artifactId>spring-ai-starter-model-openai</artifactId>
-    </dependency>
-
-    <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-starter-model-chat-memory</artifactId>
-</dependency>
-
-    <!-- Spring AI pg依赖 -->
-    <dependency>
-        <groupId>org.springframework.ai</groupId>
-        <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
-        <version>1.0.0-M7</version>
-    </dependency>
-
-    <!-- PostgreSQL JDBC 驱动（HikariCP 需要根据驱动类识别 URL 协议） -->
-    <dependency>
-        <groupId>org.postgresql</groupId>
-        <artifactId>postgresql</artifactId>
-        <scope>runtime</scope>
-    </dependency>
-
-    <!-- Spring AI Markdown 文档读取器 -->
-    <dependency>
-      <groupId>org.springframework.ai</groupId>
-      <artifactId>spring-ai-markdown-document-reader</artifactId>
-    </dependency>
-
-    <!-- Spring AI 向量库核心（含 VectorStore 接口与 SimpleVectorStore 内存实现） -->
-    <dependency>
-      <groupId>org.springframework.ai</groupId>
-      <artifactId>spring-ai-vector-store</artifactId>
-    </dependency>
-
-    <!-- Spring AI RAG 模块（含 RetrievalAugmentationAdvisor） -->
-    <dependency>
-      <groupId>org.springframework.ai</groupId>
-      <artifactId>spring-ai-rag</artifactId>
-    </dependency>
-
-    <dependency>
-    <groupId>com.github.victools</groupId>
-    <artifactId>jsonschema-generator</artifactId>
-    <version>4.38.0</version>
-</dependency>
-
-    <!--Java 高性能二进制序列化框架-->
-    <dependency>
-    <groupId>com.esotericsoftware</groupId>
-    <artifactId>kryo</artifactId>
-    <version>5.6.2</version>
-</dependency>
-
-    <dependency>
-    <groupId>org.jsoup</groupId>
-    <artifactId>jsoup</artifactId>
-    <version>1.19.1</version>
-</dependency>
-
-
-<!-- https://mvnrepository.com/artifact/com.itextpdf/itext-core -->
-<dependency>
-    <groupId>com.itextpdf</groupId>
-    <artifactId>itext-core</artifactId>
-    <version>9.1.0</version>
-    <type>pom</type>
-</dependency>
-<!-- https://mvnrepository.com/artifact/com.itextpdf/font-asian -->
-<!-- 生产代码(PDFGenerationTool)运行时也需要 STSongStd-Light 等内置中文字体,故不能限定为 test scope -->
-<dependency>
-    <groupId>com.itextpdf</groupId>
-    <artifactId>font-asian</artifactId>
-    <version>9.1.0</version>
-</dependency>
-
-
-
-
-    <dependency>
-      <groupId>cn.hutool</groupId>
-      <artifactId>hutool-all</artifactId>
-      <version>5.8.37</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.github.xiaoymin</groupId>
-      <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-      <version>4.4.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.alibaba</groupId>
-      <artifactId>dashscope-sdk-java</artifactId>
-      <version>2.19.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.36</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
-
-
-  <!-- Maven Central is included by default in Maven builds.
-     You usually don’t need to configure it explicitly,
-     but it's shown here for clarity. -->
-<repositories>
-    <repository>
-        <id>central</id>
-        <url>https://repo.maven.apache.org/maven2</url>
-    </repository>
-</repositories>
-
-  <build>
-    <plugins>
-      <plugin>
+    <parent>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-      </plugin>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.4</version>
+        <relativePath/>
+    </parent>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <!-- 改成3.11.0及以上，完美支持JDK17/21 -->
-        <version>3.11.0</version>
-      </plugin>
+    <groupId>com.wc</groupId>
+    <artifactId>wc-ai-agent</artifactId>
+    <version>1.0-SNAPSHOT</version>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <argLine>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8</argLine>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+    <!-- 父 POM 必须为 pom 打包 -->
+    <packaging>pom</packaging>
+
+    <name>wc-ai-agent</name>
+
+    <modules>
+        <module>wc-ai-agent-app</module>
+        <!-- 第二步再加：<module>wc-ai-agent-mcp-search</module> -->
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.1.8</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <argLine>-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8</argLine>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>

@@ -19,6 +19,21 @@ spring:
         dimensions: 1024
         distance-type: COSINE_DISTANCE
         max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+    mcp:
+      client:
+        # 启动时自动连接这些 stdio MCP 服务器
+        stdio:
+          connections:
+            # 示例：连接到一个文件操作 MCP 服务器
+            filesystem:
+              command: npx
+              args:
+                - "-y"
+                - "@modelcontextprotocol/server-filesystem"
+                - "/Users/you/Documents"
+              env:
+                API_KEY: your-api-key
+
   datasource:
     url: jdbc:postgresql://localhost:5432/wc_ai_agent
     username: postgres

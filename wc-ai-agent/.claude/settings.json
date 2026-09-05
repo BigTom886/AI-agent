@@ -2,7 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(jar xf *)",
-      "Bash(javap -p '/tmp/org/springframework/ai/chat/prompt/Prompt$Builder.class')"
+      "Bash(javap -p '/tmp/org/springframework/ai/chat/prompt/Prompt$Builder.class')",
+      "Bash(ls -la ~/.m2/wrapper/dists/apache-maven-3.6.3-bin/ 2>&1)",
+      "Read(//c/Users/Administrator/.m2/wrapper/dists/apache-maven-3.6.3-bin/**)",
+      "Read(//c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper//**)",
+      "Read(//c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper//**)",
+      "Read(//c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/**)",
+      "Read(//c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/**)",
+      "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/mvnw d:/github/AI-agent/wc-ai-agent/mvnw)",
+      "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/mvnw.cmd d:/github/AI-agent/wc-ai-agent/mvnw.cmd)",
+      "Bash(mkdir -p d:/github/AI-agent/wc-ai-agent/.mvn/wrapper)",
+      "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.jar d:/github/AI-agent/wc-ai-agent/.mvn/wrapper/maven-wrapper.jar)",
+      "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.properties d:/github/AI-agent/wc-ai-agent/.mvn/wrapper/maven-wrapper.properties)",
+      "Bash(./mvnw -pl wc-ai-agent-app -am clean compile -DskipTests)"
     ]
   }
 }
