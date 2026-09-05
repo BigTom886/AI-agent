@@ -22,7 +22,7 @@
 
     <modules>
         <module>wc-ai-agent-app</module>
-        <!-- 第二步再加：<module>wc-ai-agent-mcp-search</module> -->
+        <module>wc-ai-agent-mcp-search</module>
     </modules>
 
     <properties>

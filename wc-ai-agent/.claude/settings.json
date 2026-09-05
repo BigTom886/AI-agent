@@ -14,7 +14,14 @@
       "Bash(mkdir -p d:/github/AI-agent/wc-ai-agent/.mvn/wrapper)",
       "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.jar d:/github/AI-agent/wc-ai-agent/.mvn/wrapper/maven-wrapper.jar)",
       "Bash(cp /c/Users/Administrator/.vscode/extensions/vscjava.vscode-maven-0.45.3/resources/maven-wrapper/.mvn/wrapper/maven-wrapper.properties d:/github/AI-agent/wc-ai-agent/.mvn/wrapper/maven-wrapper.properties)",
-      "Bash(./mvnw -pl wc-ai-agent-app -am clean compile -DskipTests)"
+      "Bash(./mvnw -pl wc-ai-agent-app -am clean compile -DskipTests)",
+      "Bash(cat /c/Users/Administrator/.vscode/extensions/vscjava.vscode-java-pack-*/package.json 2>/dev/null | grep -E '\"name\"|\"version\"' | head -4; echo \"---\"; ls /c/Users/Administrator/.vscode/extensions/ | grep -i \"vscode-java\\\\|vscode-maven\" 2>&1)",
+      "Read(//c/Users/Administrator/.vscode/extensions/**)",
+      "Read(//c/Users/Administrator/.vscode/extensions//**)",
+      "Bash(rm \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/ImageSearchToolTest.java\" && ls \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/\" 2>/dev/null && echo \"---removed---\")"
+    ],
+    "additionalDirectories": [
+      "d:\\github\\AI-agent\\wc-ai-agent\\wc-ai-agent-mcp-search\\src\\test"
     ]
   }
 }

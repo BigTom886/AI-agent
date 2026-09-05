@@ -1,0 +1,20 @@
+server:
+  port: 8081  # 避开 wc-ai-agent-app 的 8080
+
+spring:
+  application:
+    name: wc-ai-agent-mcp-search
+  ai:
+    mcp:
+      server:
+        name: wc-pexels-search
+        version: 1.0.0
+
+pexels:
+  api-key: PSIosCclH4VfOaqK1BLURsMGl9Wt9TRsIdIiS2r6qIrvnYxw1PzqbHJr   # 从环境变量读取；本地可填默认值占位
+  base-url: https://api.pexels.com
+
+logging:
+  level:
+    com.wc.mcp.search: INFO
+    org.springframework.ai.mcp: INFO
