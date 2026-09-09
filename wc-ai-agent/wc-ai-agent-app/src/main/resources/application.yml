@@ -7,7 +7,7 @@ spring:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
-          model: qwen3.8-27b
+          model: qwen3.7-flash-2026-07-15
       # DashScope 的 OpenAI 兼容接口没有 text-embedding-ada-002；
       # 这里指定 DashScope 的 text-embedding-v3（维度 1024，可按需改 v1/v2）
       embedding:
