@@ -4,12 +4,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.wc.tools.TerminalOperationTool;
 
 public class TerminalOperationToolTest
 {
+    @TempDir
+    Path tempDir;
 
     @Test
     public void testExecuteTerminalCommand()
@@ -28,5 +35,17 @@ public class TerminalOperationToolTest
                 "执行结果不应包含错误信息,实际: " + result);
         assertFalse(result.contains("Command execution failed with exit code"),
                 "执行结果不应包含退出码错误,实际: " + result);
+    }
+
+    @Test
+    public void testChineseOutputNotGarbled() throws IOException
+    {
+        // 中文 Windows 上 cmd 内置命令输出编码与 chcp 报告常不一致,曾导致乱码。
+        // 用确定的中文名文件验证 dir 输出解码正确
+        Files.createFile(tempDir.resolve("中文文件测试.txt"));
+        TerminalOperationTool tool = new TerminalOperationTool();
+        String result = tool.executeTerminalCommand("dir /b \"" + tempDir + "\"");
+        assertTrue(result.contains("中文文件测试.txt"),
+                "输出应包含正确的中文文件名,实际: " + result);
     }
 }
