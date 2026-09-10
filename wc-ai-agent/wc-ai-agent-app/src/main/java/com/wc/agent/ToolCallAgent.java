@@ -61,7 +61,12 @@ public class ToolCallAgent extends ReActAgent {
      */
     @Override
     public boolean think() {
-        if (getNextStepPrompt() != null && !getNextStepPrompt().isEmpty()) {
+        // 只在首轮 think() 注入 nextStepPrompt,避免每轮重复占用 token。
+        // 判定依据:此时 messageList 只包含 BaseAgent.run() 添加的初始 user 消息,
+        // 后续 think() 再进来时 size >= 2,自然跳过。
+        if (getNextStepPrompt() != null
+                && !getNextStepPrompt().isEmpty()
+                && getMessageList().size() == 1) {
             UserMessage userMessage = new UserMessage(getNextStepPrompt());
             getMessageList().add(userMessage);
         }
