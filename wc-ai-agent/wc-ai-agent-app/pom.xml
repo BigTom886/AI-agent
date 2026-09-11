@@ -108,6 +108,12 @@
             <artifactId>flexmark-all</artifactId>
             <version>0.64.8</version>
         </dependency>
+        <!-- WebP 解码：iText 不支持 WebP 格式的网络图片，先转成 PNG 再嵌入 -->
+        <dependency>
+            <groupId>org.sejda.imageio</groupId>
+            <artifactId>webp-imageio</artifactId>
+            <version>0.1.6</version>
+        </dependency>
 
         <!--
             MCP 客户端 —— 同步（SseHttpClientTransport）。
@@ -129,6 +135,15 @@
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
             <version>4.4.0</version>
+        </dependency>
+
+        <!-- 覆盖 knife4j 4.4.0 传递的 springdoc 2.3.0：
+             springdoc 2.3.0 与 Spring Boot 3.4 (Spring Framework 6.2) 不兼容，
+             生成 /v3/api-docs 时抛 NoSuchMethodError 导致 500 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.13</version>
         </dependency>
 
         <dependency>

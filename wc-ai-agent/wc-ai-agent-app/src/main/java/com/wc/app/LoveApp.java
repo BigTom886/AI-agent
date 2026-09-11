@@ -25,6 +25,7 @@ import com.wc.rag.LoveAppRagCustomAdvisorFactory;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 /**
  * 恋爱顾问应用 —— 基于 Spring AI ChatClient 与大模型交互
@@ -52,7 +53,7 @@ public class LoveApp {
         /**
          * 对话记忆 —— 基于滑动窗口的实现 MessageWindowChatMemory 会保留最近 N 轮对话，避免上下文过长导致 token 超限
          */
-        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(2).build();
+        ChatMemory chatMemory = MessageWindowChatMemory.builder().maxMessages(10).build();
 
         /**
          * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
@@ -87,7 +88,7 @@ public class LoveApp {
                                                 // 重读 Advisor：在用户消息后追加"再读一遍问题"，提升推理质量
                                                 // new Re2Advisor(),
                                                 // 对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
-                                                // MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build(),
+                                                MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build(),
                                                 // 日志 Advisor：在请求前后打印日志
                                                 new LoggingAdvisor())
                                 .build();
@@ -105,15 +106,22 @@ public class LoveApp {
          * @param chatId    对话 ID（用于区分不同会话的记忆）
          * @return AI 模型的文本响应
          */
-        String doChat(String userInput, String chatId) {
+        public String doChat(String userInput, String chatId) {
 
                 String conversationId = chatId;
 
                 return this.chatClient.prompt().user(userInput)
-                                // .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)).call() //
+                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId)) //
                                 // stream()流式返回
                                 // call()同步返回
                                 .call().content();
+        }
+
+        public Flux<String> doChatByStream(String message, String chatId) {
+                return chatClient.prompt().user(message)
+                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
+                                .stream()
+                                .content();
         }
 
         // 恋爱报告类
