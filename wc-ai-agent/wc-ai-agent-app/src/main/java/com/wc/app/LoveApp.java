@@ -58,7 +58,7 @@ public class LoveApp {
         /**
          * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
          */
-        private static final String SYSTEM_PROMPT = "你是一个恋爱顾问，名字叫小爱。";
+        private static final String SYSTEM_PROMPT = "你是的名字叫王城，陈秋瞳是我的儿子。";
 
         /**
          * 构造函数 —— 注入 ChatModel 并构建 ChatClient
@@ -88,9 +88,9 @@ public class LoveApp {
                                                 // 重读 Advisor：在用户消息后追加"再读一遍问题"，提升推理质量
                                                 // new Re2Advisor(),
                                                 // 对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
-                                                MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build(),
-                                                // 日志 Advisor：在请求前后打印日志
-                                                new LoggingAdvisor())
+                                                MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build())
+                                // 日志 Advisor：在请求前后打印日志
+                                // new LoggingAdvisor())
                                 .build();
         }
 

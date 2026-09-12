@@ -21,22 +21,27 @@ spring:
         max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
     mcp:
       client:
-        # 关闭 stdio 示例，避免启动时去找那个不存在的 npx 命令
+        # 本地 stdio 连接：由本应用自动拉起 MCP 服务端子进程（java -jar），
+        # 通过标准输入/输出通信，无需手动启动 8081 服务，也不占用 HTTP 端口
         stdio:
-          enabled: false
-        # SSE 连接列表（Spring AI 自动注入 ToolCallbackProvider）
-        # 重要：url 只写 baseUrl，sse-endpoint 单独配；否则默认会拼成 /sse/sse
-        sse:
+          enabled: true
           connections:
             pexels-search:
-              url: http://localhost:8081        # 服务端 baseUrl
-              sse-endpoint: /sse                 # 与服务端 spring.ai.mcp.server.sse-endpoint 默认值一致
-        # 可选：客户端公共配置
-        # name: wc-ai-agent-client
-        # version: 1.0.0
-        # MCP 工具调用超时：默认 20s，Pexels 国内访问慢时 15s 服务端超时 + 传输开销可能不够
+              command: java
+              args:
+                - -jar
+                # 指向 mcp-search 打包后的可执行 jar（先对该模块执行 mvn package）
+                - D:/Study/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/target/wc-ai-agent-mcp-search-1.0-SNAPSHOT.jar
+        # SSE 远程连接已停用；如需切回，删掉上面的 stdio 配置，改回：
+        # sse:
+        #   connections:
+        #     pexels-search:
+        #       url: http://localhost:8081
+        #       sse-endpoint: /sse
+        # MCP 工具调用超时：stdio 对端是独立 JVM 子进程，有冷启动开销，
+        # 加上 Pexels 国内访问慢（服务端自身 15s 超时），保留 30s
         request-timeout: 30s
-        # initialized: true   # 启动时立即调用 initialize()
+        # initialized: true   # 启动时立即调用 initialize() 握手，能更早暴露配置错误
 
   datasource:
     url: jdbc:postgresql://localhost:5432/wc_ai_agent

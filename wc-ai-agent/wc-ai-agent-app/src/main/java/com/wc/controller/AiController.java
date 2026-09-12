@@ -1,4 +1,4 @@
-package com.wc.controller.AiController;
+package com.wc.controller;
 
 import java.io.IOException;
 

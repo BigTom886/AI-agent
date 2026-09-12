@@ -13,10 +13,10 @@
     <artifactId>wc-ai-agent-mcp-search</artifactId>
 
     <dependencies>
-        <!-- WebMVC SSE 传输的 MCP Server -->
+        <!-- STDIO 传输的 MCP Server：本地子进程模式，走标准输入输出，不启动 Web 容器 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+            <artifactId>spring-ai-starter-mcp-server</artifactId>
         </dependency>
 
         <!-- 调用 Pexels API 用 WebClient -->

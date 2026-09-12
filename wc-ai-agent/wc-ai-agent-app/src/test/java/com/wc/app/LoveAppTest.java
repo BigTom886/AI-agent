@@ -22,21 +22,18 @@ import cn.hutool.core.lang.UUID;
 import jakarta.annotation.Resource;
 
 @SpringBootTest
-public class LoveAppTest
-{
+public class LoveAppTest {
 
     @Autowired
     private LoveApp loveApp;
 
     @BeforeAll
-    static void fixEncoding()
-    {
+    static void fixEncoding() {
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
     }
 
     @Test
-    void testDoChat()
-    {
+    void testDoChat() {
         // 两轮对话必须用同一个 chatId，MessageChatMemoryAdvisor 才会携带历史消息
 
         // 同步调用
@@ -60,8 +57,7 @@ public class LoveAppTest
     }
 
     @Test
-    void doChatWithReport()
-    {
+    void doChatWithReport() {
 
         String chatId = UUID.randomUUID().toString();
         // 第一轮
@@ -71,8 +67,7 @@ public class LoveAppTest
     }
 
     @Test
-    void doChatWithRag()
-    {
+    void doChatWithRag() {
         String chatId = UUID.randomUUID().toString();
         String message = "我已经结婚了，但是婚后关系不太亲密，怎么办？";
         String answer = loveApp.doChatWithRag(message, chatId);
@@ -83,8 +78,7 @@ public class LoveAppTest
     VectorStore pgVectorVectorStore;
 
     @Test
-    void test1()
-    {
+    void test1() {
         List<Document> documents = List.of(
                 new Document(
                         "Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!! Spring AI rocks!!",
@@ -104,8 +98,7 @@ public class LoveAppTest
     LoveAppDocumentLoader loveAppDocumentLoader;
 
     @Test
-    void test2()
-    {
+    void test2() {
 
         // List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
         // // 添加文档
@@ -127,8 +120,7 @@ public class LoveAppTest
     MyKeywordEnricher myKeywordEnricher;
 
     @Test
-    void test3()
-    {
+    void test3() {
         List<Document> documents = loveAppDocumentLoader.loadMarkdowns();
 
         // 自主切分(这里是按token切分，实际可按业务需求自定义切分规则)
@@ -138,24 +130,21 @@ public class LoveAppTest
         // 利用大模型提取文档块关键信息
         List<Document> enrichedDocuments = myKeywordEnricher.enrichDocunments(documents);
 
-        for (Document doc : enrichedDocuments)
-        {
+        for (Document doc : enrichedDocuments) {
             System.out.println("=== splited document ===");
             System.out.println("[text] " + doc.getText() + System.lineSeparator() + "[metadata] " + doc.getMetadata());
 
         }
     }
 
-    private void testMessage(String message)
-    {
+    private void testMessage(String message) {
         String chatId = UUID.randomUUID().toString();
         String answer = loveApp.doChatWithTools(message, chatId);
         Assertions.assertNotNull(answer);
     }
 
     @Test
-    void doChatWithTools()
-    {
+    void doChatWithTools() {
         // 测试联网搜索问题的答案
         // testMessage("周末想带女朋友去上海约会，推荐几个适合情侣的小众打卡地？");
 
@@ -172,7 +161,7 @@ public class LoveAppTest
         // testMessage("保存我的恋爱档案为文件");
 
         // // 测试 PDF 生成
-        testMessage("生成一份‘七夕约会计划’PDF，包含餐厅预订、活动流程和礼物清单");
+        testMessage("你当前有哪些工具？");
     }
 
 }
