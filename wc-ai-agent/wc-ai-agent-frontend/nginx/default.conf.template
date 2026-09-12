@@ -1,0 +1,50 @@
+server {
+    listen       80;
+    server_name  _;
+
+    root   /usr/share/nginx/html;
+    index  index.html;
+
+    # DNS（由 entrypoint 脚本注入：集群 DNS + 公共 DNS）
+    resolver ${DNS_RESOLVER} valid=30s ipv6=off;
+
+    # 后端接口反向代理
+    # 变量形式 proxy_pass：DNS 在请求时解析，后端不可用时 nginx 自身不会启动崩溃
+    location /api/ {
+        # 注意：协议名必须是字面量（由 envsubst 在容器启动时固化为 http/https），
+        # 变量中只能放 host:port，否则 nginx 会把 "https:" 误解析为 主机:端口
+        set $backend "${BACKEND_FULL}";
+        proxy_pass ${BACKEND_PROTO}://$backend$request_uri;
+
+        proxy_http_version 1.1;
+        # Host 必须带上游域名：内网时为服务名，公网时为后端公网域名（网关按 Host 路由）
+        proxy_set_header Host ${BACKEND_HOST_HEADER};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # 公网 HTTPS 上游所需
+        proxy_ssl_server_name on;
+        proxy_ssl_name ${BACKEND_HOST_HEADER};
+
+        # ===== SSE 流式响应关键配置 =====
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        chunked_transfer_encoding on;
+        add_header X-Accel-Buffering no;
+    }
+
+    # 前端单页应用（history 路由模式）
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 静态资源缓存
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+    }
+}

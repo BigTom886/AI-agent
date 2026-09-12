@@ -15,6 +15,7 @@ import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -150,7 +151,10 @@ public class LoveApp {
                 return new LoveReport("恋爱顾问报告", suggestions);
         }
 
-        @Resource
+        // prod 环境不创建向量库 Bean（见 LoveAppVectorStoreConfig 的 @Profile("!prod")），
+        // 允许为 null；doChatWithRag 等 RAG 接口仅在本地具备向量库的环境可用。
+        @Autowired(required = false)
+        @Qualifier("loveAppVectorStore")
         private VectorStore loveAppVectorStore;
 
         public String doChatWithRag(String message, String chatId) {
@@ -180,7 +184,9 @@ public class LoveApp {
          * @return AI 回复内容
          */
 
-        @Resource
+        // 同上：prod 环境无 pgvector Bean，允许为 null
+        @Autowired(required = false)
+        @Qualifier("pgVectorVectorStore")
         VectorStore pgVectorVectorStore;
 
         public String doRagAdvisor(String message, String chatId, String status) {
@@ -214,12 +220,16 @@ public class LoveApp {
                 return content;
         }
 
-        @Resource
-        // Spring AI通过yml配置文件自动注入mcpToolCallbacks对象
+        // prod 环境排除了 MCP 客户端自动装配，该 Bean 不存在，允许为 null；
+        // doChatWithMcp 仅在本地配置了 MCP 服务的环境可用。
+        @Autowired(required = false)
         @Qualifier("mcpToolCallbacks") // McpToolCallbackAutoConfiguration#mcpToolCallbacks 定义的 SYNC provider
         private ToolCallbackProvider toolCallbackProvider;
 
         public String doChatWithMcp(String message, String chatId) {
+                if (toolCallbackProvider == null) {
+                        throw new IllegalStateException("MCP 客户端未启用（当前环境不提供搜图/搜视频工具）");
+                }
                 ChatResponse response = chatClient.prompt().user(message)
                                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                                 // 开启日志，便于观察效果

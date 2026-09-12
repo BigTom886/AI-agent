@@ -6,12 +6,18 @@ import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgDistanceType.COSINE_DISTANCE;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexType.HNSW;
 
+/**
+ * pgvector 向量库依赖外部 PostgreSQL（需安装 vector 扩展）。
+ * 生产环境（微信云托管）不提供数据库，prod profile 下整个配置类不生效。
+ */
 @Configuration
+@Profile("!prod")
 public class PgVectorVectorStoreConfig {
 
     @Bean

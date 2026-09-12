@@ -1,0 +1,36 @@
+# 生产环境（微信云托管）配置
+# 与 application.yml 合并生效，同名配置项以本文件为准。
+# 前端只使用基础对话/智能体接口，因此生产环境：
+#   1. 不连接 PostgreSQL（排除数据源与 pgvector 自动装配）
+#   2. 不启用 embedding 向量模型
+#   3. 不启用 MCP 客户端（不拉起搜图/搜视频子进程）
+#   4. 密钥通过环境变量注入，不打进镜像
+
+server:
+  # 与云托管服务端口、Dockerfile EXPOSE 保持一致
+  port: 80
+
+spring:
+  autoconfigure:
+    exclude:
+      # —— 数据库 / 向量库：生产环境不使用 ——
+      # 不创建 HikariCP 数据源
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      # pgvector 自动配置依赖 JdbcTemplate，不会随数据源自动退避，必须显式排除
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+      # —— MCP 客户端：生产环境不启用搜图/搜视频 ——
+      # stdio 传输（不再启动 mcp-search 子进程）、客户端连接、工具回调 Provider
+      - org.springframework.ai.mcp.client.common.autoconfigure.StdioTransportAutoConfiguration
+      - org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration
+      - org.springframework.ai.mcp.client.common.autoconfigure.McpToolCallbackAutoConfiguration
+  ai:
+    openai:
+      # DashScope API Key，从环境变量注入（对话/ChatModel 仍需要）
+      api-key: ${DASHSCOPE_API_KEY}
+    model:
+      # 关闭向量嵌入模型自动装配（生产环境不用 RAG）
+      embedding: none
+
+# 联网搜索工具的密钥，从环境变量注入
+search-api:
+  api-key: ${SEARCH_API_KEY}

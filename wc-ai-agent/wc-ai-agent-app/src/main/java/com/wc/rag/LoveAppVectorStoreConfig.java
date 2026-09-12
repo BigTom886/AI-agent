@@ -5,10 +5,16 @@ import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import jakarta.annotation.Resource;
 
+/**
+ * 内存版向量库，依赖 EmbeddingModel。
+ * 生产环境不使用 RAG/向量检索功能，prod profile 下不创建该 Bean。
+ */
 @Configuration
+@Profile("!prod")
 public class LoveAppVectorStoreConfig {
 
     @Resource
