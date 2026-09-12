@@ -17,3 +17,9 @@ Thumbs.db
 .mvn/
 mvnw
 mvnw.cmd
+
+# 本地密钥配置（永不提交，复制 example 模板后填写真实新 key）
+**/application-local.yml
+.env
+chat_memory/
+tmp/

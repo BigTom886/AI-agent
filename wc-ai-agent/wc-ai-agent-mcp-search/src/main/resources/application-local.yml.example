@@ -1,0 +1,6 @@
+# 本地开发密钥配置模板（MCP 搜图服务）
+# 用法：复制本文件为同目录 application-local.yml，填入你【轮换后的新 key】。
+# application-local.yml 已被 .gitignore 忽略，不会提交。
+
+pexels:
+  api-key: 你的新Pexels密钥

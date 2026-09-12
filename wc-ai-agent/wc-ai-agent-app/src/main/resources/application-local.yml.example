@@ -1,0 +1,11 @@
+# 本地开发密钥配置模板
+# 用法：复制本文件为同目录 application-local.yml，填入你【轮换后的新 key】。
+# application-local.yml 已被 .gitignore 忽略，不会提交。
+
+spring:
+  ai:
+    openai:
+      api-key: sk-你的新DashScope密钥
+
+search-api:
+  api-key: 你的新SearchAPI密钥
