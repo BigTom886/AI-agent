@@ -54,7 +54,11 @@ public class PexelsSearchTool
 
         try
         {
-            PexelsPhoto.Page page = pexelsClient.searchPhotos(query, perPage, null, orientation, size, color).block();
+            // 15 秒超时：Pexels 国内访问可能很慢，无限等待会把 MCP 客户端
+            // （默认 20s request-timeout）拖到超时崩溃；提前失败并返回错误 JSON
+            PexelsPhoto.Page page = pexelsClient
+                    .searchPhotos(query, perPage, null, orientation, size, color)
+                    .block(java.time.Duration.ofSeconds(15));
 
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(page);
         } catch (Exception e)
@@ -86,7 +90,7 @@ public class PexelsSearchTool
         {
             PexelsVideo.Page page = pexelsClient
                     .searchVideos(query, perPage, null, orientation, minWidth, minHeight, minDuration, maxDuration)
-                    .block();
+                    .block(java.time.Duration.ofSeconds(15));
 
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(page);
         } catch (Exception e)
