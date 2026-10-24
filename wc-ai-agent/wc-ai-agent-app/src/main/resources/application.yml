@@ -13,17 +13,9 @@ spring:
       chat:
         options:
           model: glm-5.2
-      # DashScope 的 OpenAI 兼容接口没有 text-embedding-ada-002；
-      # 这里指定 DashScope 的 text-embedding-v3（维度 1024，可按需改 v1/v2）
-      embedding:
-        options:
-          model: qwen3.7-text-embedding
-    vectorstore:
-      pgvector:
-        index-type: HNSW
-        dimensions: 1024
-        distance-type: COSINE_DISTANCE
-        max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+    model:
+      # 项目已移除 RAG / 向量库，不再需要 embedding 模型
+      embedding: none
     mcp:
       client:
         # 本地 stdio 连接：由本应用自动拉起 MCP 服务端子进程（java -jar），
@@ -47,13 +39,6 @@ spring:
         # 加上 Pexels 国内访问慢（服务端自身 15s 超时），保留 30s
         request-timeout: 30s
         # initialized: true   # 启动时立即调用 initialize() 握手，能更早暴露配置错误
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/wc_ai_agent
-    username: postgres
-    password: 123456
-    driver-class-name: org.postgresql.Driver
-
 
 # 日志级别配置：确保 com.wc 包下的 INFO 日志能正常输出
 logging:

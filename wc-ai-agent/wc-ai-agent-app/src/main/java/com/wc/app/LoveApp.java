@@ -3,26 +3,19 @@ package com.wc.app;
 import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.ChatClient.AdvisorSpec;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.wc.chatmemory.FileBasedChatMemory;
 import com.wc.demo.invoke.LoggingAdvisor;
-import com.wc.demo.invoke.Re2Advisor;
-import com.wc.rag.LoveAppRagCustomAdvisorFactory;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -86,8 +79,6 @@ public class LoveApp {
                                 .defaultSystem(SYSTEM_PROMPT)
                                 // 注册对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
                                 .defaultAdvisors(
-                                                // 重读 Advisor：在用户消息后追加"再读一遍问题"，提升推理质量
-                                                // new Re2Advisor(),
                                                 // 对话记忆 Advisor：每次请求自动携带历史消息，响应后自动保存新消息
                                                 MessageChatMemoryAdvisor.builder(fileBasedChatMemory).build())
                                 // 日志 Advisor：在请求前后打印日志
@@ -151,62 +142,6 @@ public class LoveApp {
                 return new LoveReport("恋爱顾问报告", suggestions);
         }
 
-        // prod 环境不创建向量库 Bean（见 LoveAppVectorStoreConfig 的 @Profile("!prod")），
-        // 允许为 null；doChatWithRag 等 RAG 接口仅在本地具备向量库的环境可用。
-        @Autowired(required = false)
-        @Qualifier("loveAppVectorStore")
-        private VectorStore loveAppVectorStore;
-
-        public String doChatWithRag(String message, String chatId) {
-                ChatResponse chatResponse = chatClient.prompt().user(message)
-                                // 1.1.8 起，CHAT_MEMORY_RETRIEVE_SIZE_KEY 已废弃；
-                                // 窗口大小由 ChatMemory 实现（如 MessageWindowChatMemory.maxMessages）控制
-                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
-                                // 开启日志，便于观察效果(chatClient已经注册过LoggingAdvisor)
-                                // .advisors(new LoggingAdvisor())
-                                // 应用知识库问答（1.1.x 起 QuestionAnswerAdvisor 被模块化的 RetrievalAugmentationAdvisor 替代）
-                                .advisors(RetrievalAugmentationAdvisor.builder()
-                                                .documentRetriever(VectorStoreDocumentRetriever.builder()
-                                                                .vectorStore(loveAppVectorStore).build())
-                                                .build())
-                                .call().chatResponse();
-                String content = chatResponse.getResult().getOutput().getText();
-                // log.info("content: {}", content);
-                return content;
-        }
-
-        /**
-         * 用自定义 RAG Advisor 执行对话 —— 只检索 status 匹配的文档
-         *
-         * @param message 用户输入
-         * @param chatId  会话 ID（用于对话记忆隔离）
-         * @param status  要过滤的文档 status（如 "published"）
-         * @return AI 回复内容
-         */
-
-        // 同上：prod 环境无 pgvector Bean，允许为 null
-        @Autowired(required = false)
-        @Qualifier("pgVectorVectorStore")
-        VectorStore pgVectorVectorStore;
-
-        public String doRagAdvisor(String message, String chatId, String status) {
-
-                // 1. 用工厂的静态方法构造自定义 Advisor：
-                // - 过滤 status 字段
-                // - 相似度阈值 0.5
-                // - topK=3
-                Advisor customAdvisor = LoveAppRagCustomAdvisorFactory
-                                .createLoveAppRagCustomAdvisor(pgVectorVectorStore, status);
-
-                // 2. 调 ChatClient，叠加对话记忆 + 自定义 Advisor
-                ChatResponse chatResponse = chatClient.prompt().user(message)
-                                .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId)) // 会话记忆
-                                .advisors(customAdvisor) // 自定义 RAG
-                                .call().chatResponse();
-
-                // 3. 提取文本内容返回
-                return chatResponse.getResult().getOutput().getText();
-        }
 
         @Resource
         private ToolCallback[] allTools;
