@@ -85,7 +85,20 @@ public class LoveAppKnowledgeTools
                 .similarityThreshold(similarityThreshold)
                 .build();
 
-        List<Document> documents = this.vectorStore.similaritySearch(request);
+        List<Document> documents;
+        try
+        {
+            documents = this.vectorStore.similaritySearch(request);
+        }
+        catch (Exception e)
+        {
+            // 检索失败（embedding 服务不通、数据库连不上等）不能把异常原文喂给模型：
+            // 框架默认会把异常处理成一段错误文本发给模型，模型会当成检索结果念给用户。
+            // 这里自己兜住，返回一句人话，让模型按自己的经验回答。
+            log.error("知识库检索失败: query={}", query.trim(), e);
+            return "知识库暂时检索不到内容（检索服务异常）。请基于你自己的恋爱顾问经验回答，"
+                    + "并说明这条建议是通用建议而不是知识库里的既有方法。";
+        }
         log.info("知识库检索: query={}, 命中 {} 条", query.trim(), documents.size());
 
         if (documents.isEmpty())
