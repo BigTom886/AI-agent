@@ -1,9 +1,11 @@
 package com.wc.controller;
 
 import com.wc.app.LoveApp;
+import com.wc.user.UserIdentity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,15 +40,20 @@ public class ImageSearchController {
      *
      * @param message 用户问题，必填
      * @param chatId  会话 ID，用于对话记忆隔离
+     * @param request 当前请求，用来取登录身份
      */
     @GetMapping("/chat")
     @Operation(summary = "自然语言调用 MCP 工具", description = "把用户问题交给 LLM，LLM 自行决定是否调用 searchPhotos / searchVideos")
     public ResponseEntity<?> chat(
             @Parameter(description = "用户自然语言问题，例如：帮我搜几张山的图片", required = true) @RequestParam @NotBlank(message = "message 不能为空") String message,
-            @Parameter(description = "会话 ID，用于对话记忆隔离") @RequestParam(defaultValue = "default") String chatId) {
+            @Parameter(description = "会话 ID，用于对话记忆隔离") @RequestParam(defaultValue = "default") String chatId,
+            HttpServletRequest request) {
+
+        // 放在 try 之前：未登录应该返回 401，而不是被下面的 catch 误报成 503
+        String effectiveUserId = UserIdentity.requireProfileUserId(request);
 
         try {
-            String content = loveApp.doChatWithMcp(message, chatId);
+            String content = loveApp.doChatWithMcp(message, chatId, effectiveUserId);
             return ResponseEntity.ok(content);
         } catch (Exception e) {
             // MCP 服务未启动 / 连接断开 / 工具调用失败 都会进这里

@@ -5,14 +5,48 @@ spring:
     # 本地开发默认加载 application-local.yml（已 gitignore，存放真实密钥）；
     # 云端通过启动参数 --spring.profiles.active=prod 覆盖，不加载该文件
     active: local
+  # —— 数据源：对话记忆持久化到 PostgreSQL ——
+  # 本地默认连 localhost；生产环境在 application-prod.yml 中改为云数据库地址
+  datasource:
+    url: 'jdbc:postgresql://${PG_HOST:localhost}:${PG_PORT:5432}/${PG_DATABASE:wc_ai_agent}'
+    username: ${PG_USERNAME:postgres}
+    password: ${PG_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: wc-ai-agent-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+  sql:
+    init:
+      # 建表/建索引的 DDL 统一放在 resources/schema.sql，
+      # 每次启动执行；脚本里全是 IF NOT EXISTS，重复执行安全。
+      # mode 默认是 embedded（只对内嵌库生效），PostgreSQL 必须显式设成 always。
+      mode: always
+      schema-locations: classpath:schema.sql
+      # 建表失败就让启动失败，避免「端口已通但表没建好」
+      continue-on-error: false
   ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            # 默认 embedded 只对内嵌库（H2/HSQLDB）建表，PostgreSQL 必须显式设成 always；
+            # 内置脚本是 CREATE TABLE IF NOT EXISTS SPRING_AI_CHAT_MEMORY，可重复执行
+            initialize-schema: always
     openai:
+      # 任何兼容 OpenAI 协议的服务都能接：换服务商只改 AI_API_KEY / AI_BASE_URL / AI_MODEL
       # 不要把真实 key 写在这里：本地走 application-local.yml，生产走环境变量
-      api-key: ${DASHSCOPE_API_KEY:}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      #
+      # 这三个都没有兜底默认值 —— 占位符解析不到就直接启动失败（fail fast），
+      # 总比拿着空地址去连网、连到一半超时才发现强。
+      # 本地：application-local.yml 里写死实际值
+      # 生产：application-prod.yml 里用环境变量注入
+      api-key: ${AI_API_KEY}
+      base-url: ${AI_BASE_URL}
       chat:
         options:
-          model: glm-5.2
+          model: ${AI_MODEL}
     model:
       # 项目已移除 RAG / 向量库，不再需要 embedding 模型
       embedding: none
@@ -40,6 +74,14 @@ spring:
         request-timeout: 30s
         # initialized: true   # 启动时立即调用 initialize() 握手，能更早暴露配置错误
 
+# —— MyBatis-Plus：数据访问层 ——
+# Mapper 继承 BaseMapper<T>，实体的表名/主键/列名用注解声明（com.wc.mapper 包）。
+# Mapper 接口打了 @Mapper 注解，MyBatis-Plus starter 会自动扫描并注册。
+mybatis-plus:
+  configuration:
+    # 下划线列名（user_id）自动映射成驼峰属性（userId）；默认就是 true，这里写明避免误解
+    map-underscore-to-camel-case: true
+
 # 日志级别配置：确保 com.wc 包下的 INFO 日志能正常输出
 logging:
   level:
@@ -49,6 +91,17 @@ server:
   port: 8222
   servlet:
     context-path: /api
+    session:
+      # 登录态：HttpSession 存在 Tomcat 内存里（重启/多实例会丢，见 UserIdentity 注释）
+      timeout: 7d
+      # 只用 Cookie 携带 sessionId，避免 URL 里出现 ;jsessionid=...
+      tracking-modes: cookie
+      cookie:
+        # JS 读不到，降低 XSS 窃取登录态的风险
+        http-only: true
+        # 不随跨站 POST/PUT 发送，缓解没有 Spring Security CSRF 保护的问题
+        same-site: lax
+        # 本地是 HTTP，不能设 secure=true；生产如需可单独在 application-prod.yml 开启
 
 
 # springdoc-openapi 接口文档配置
@@ -72,3 +125,20 @@ knife4j:
 # searchApi（本地走 application-local.yml，生产走环境变量 SEARCH_API_KEY）
 search-api:
   api-key: ${SEARCH_API_KEY:}
+
+# —— 对话记忆 ——
+# 存储由 Spring AI 内置的 JDBC 仓库负责（表 SPRING_AI_CHAT_MEMORY），
+# 这里只配「算法」：消息超过 summary-threshold 条时，把老消息压成一段摘要，
+# 摘要 + 最近 summary-keep 条原文一起保存。
+love:
+  memory:
+    # 触发压缩的阈值：20 条消息 ≈ 10 轮对话（1 轮 = 1 条用户消息 + 1 条 AI 消息）
+    summary-threshold: 20
+    # 压缩后保留最近多少条原文：6 条 ≈ 3 轮
+    summary-keep: 6
+  # —— 跨会话的用户画像（user_profile 表）——
+  profile:
+    # 画像最多保存多少条，超出丢掉最旧的（防止画像无限膨胀吃掉提示词）
+    max-items: 30
+
+

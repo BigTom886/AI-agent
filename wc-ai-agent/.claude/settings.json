@@ -18,7 +18,17 @@
       "Bash(cat /c/Users/Administrator/.vscode/extensions/vscjava.vscode-java-pack-*/package.json 2>/dev/null | grep -E '\"name\"|\"version\"' | head -4; echo \"---\"; ls /c/Users/Administrator/.vscode/extensions/ | grep -i \"vscode-java\\\\|vscode-maven\" 2>&1)",
       "Read(//c/Users/Administrator/.vscode/extensions/**)",
       "Read(//c/Users/Administrator/.vscode/extensions//**)",
-      "Bash(rm \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/ImageSearchToolTest.java\" && ls \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/\" 2>/dev/null && echo \"---removed---\")"
+      "Bash(rm \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/ImageSearchToolTest.java\" && ls \"d:/github/AI-agent/wc-ai-agent/wc-ai-agent-mcp-search/src/test/\" 2>/dev/null && echo \"---removed---\")",
+      "PowerShell(mvn -q -pl wc-ai-agent-app -am compile -DskipTests 2>&1)",
+      "PowerShell(mvn -q -pl wc-ai-agent-app -am test-compile -DskipTests 2>&1)",
+      "PowerShell(mvn -pl wc-ai-agent-app test -Dtest='ChatIdsTest,UserIdsTest,ChatMemoryTest,UserProfileServiceTest,AppTest' -DfailIfNoTests=false > \"$env:TEMP\\\\wc-test-run.log\" 2>&1; Get-Content \"$env:TEMP\\\\wc-test-run.log\" | Select-String -Pattern 'Tests run|ERROR|BUILD' | Select-Object -Last 30)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/mybatis/spring/boot/mybatis-spring-boot-starter/3.0.5/mybatis-spring-boot-starter-3.0.5.pom\" -UseBasicParsing -TimeoutSec 20; $r.Content } catch { Write-Output \"FAILED: $\\($_.Exception.Message\\)\" })",
+      "PowerShell($tmp = \"$env:TEMP\\\\mybatis-src\"; New-Item -ItemType Directory -Force -Path $tmp | Out-Null; $jar = \"$tmp\\\\mybatis-3.5.19-sources.jar\"; if \\(-not \\(Test-Path $jar\\)\\) { Invoke-WebRequest -Uri \"https://repo.maven.apache.org/maven2/org/mybatis/mybatis/3.5.19/mybatis-3.5.19-sources.jar\" -OutFile $jar -UseBasicParsing -TimeoutSec 60 }; Push-Location $tmp; & \"$env:JAVA_HOME\\\\bin\\\\jar.exe\" xf $jar org/apache/ibatis/session/Configuration.java org/apache/ibatis/executor/resultset/DefaultResultSetHandler.java 2>$null; Pop-Location; Select-String -Path \"$tmp\\\\org\\\\apache\\\\ibatis\\\\session\\\\Configuration.java\" -Pattern 'argNameBasedConstructorAutoMapping' -Context 2,2)",
+      "PowerShell(mvn -pl wc-ai-agent-app test \"-Dtest=ChatIdsTest,UserIdsTest,ChatMemoryTest,UserProfileServiceTest\" -DfailIfNoTests=false 2>&1 | Out-File -FilePath \"$env:TEMP\\\\wc-mybatis-final.log\" -Encoding utf8; Select-String -Path \"$env:TEMP\\\\wc-mybatis-final.log\" -Pattern 'Tests run:|BUILD' | ForEach-Object { $_.Line })",
+      "PowerShell(mvn -pl wc-ai-agent-app test \"-Dtest=TempMappingDemoTest\" -DfailIfNoTests=false 2>&1 | Out-File -FilePath \"$env:TEMP\\\\wc-demo-type.log\" -Encoding utf8; Select-String -Path \"$env:TEMP\\\\wc-demo-type.log\" -Pattern 'Tests run:|BUILD|ReflectionException|NoSuchMethod|Error instantiating' | Select-Object -First 10 | ForEach-Object { $_.Line })",
+      "PowerShell($tmp = \"$env:TEMP\\\\mybatis-src\"; Select-String -Path \"$tmp\\\\org\\\\apache\\\\ibatis\\\\executor\\\\resultset\\\\DefaultResultSetHandler.java\" -Pattern 'private boolean columnMatchesParam' -Context 0,18 | ForEach-Object { $_.Line; $_.Context.PostContext })",
+      "PowerShell(Select-String -Path \"$env:TEMP\\\\wc-e2e.log\" -Pattern 'tool|Tool' -CaseSensitive:$false | Select-Object -First 30 | ForEach-Object { $_.Line })",
+      "PowerShell(mvn -q -pl wc-ai-agent-app test \"-Dtest=UserProfileApiTest\" -DfailIfNoTests=false 2>&1)"
     ],
     "additionalDirectories": [
       "d:\\github\\AI-agent\\wc-ai-agent\\wc-ai-agent-mcp-search\\src\\test"

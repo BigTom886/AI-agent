@@ -1,0 +1,204 @@
+/**
+ * Markdown 内容的全局样式
+ *
+ * 为什么是全局的（不 scoped）：
+ * v-html 渲染出来的元素不带 scope 属性，scoped 样式匹配不到它们，
+ * 所以 Markdown 内部的排版样式必须写成全局的。
+ */
+
+/* ===== 容器 ===== */
+.markdown-body {
+  /* 气泡默认是 pre-wrap（保留用户输入的换行），
+     但 Markdown 渲染出来的 HTML 源码里本身有缩进和换行，
+     继承 pre-wrap 会把这些空白原样显示出来，所以这里改回 normal */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ===== 段落与标题 ===== */
+.markdown-body p {
+  margin: 0 0 10px;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body h1 {
+  font-size: 1.35em;
+}
+
+.markdown-body h2 {
+  font-size: 1.22em;
+}
+
+.markdown-body h3 {
+  font-size: 1.12em;
+}
+
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-size: 1em;
+}
+
+.markdown-body h1:first-child,
+.markdown-body h2:first-child,
+.markdown-body h3:first-child,
+.markdown-body h4:first-child,
+.markdown-body h5:first-child,
+.markdown-body h6:first-child {
+  margin-top: 0;
+}
+
+/* ===== 列表 ===== */
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.markdown-body li {
+  margin: 3px 0;
+}
+
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin: 3px 0;
+}
+
+/* ===== 引用 ===== */
+.markdown-body blockquote {
+  margin: 0 0 10px;
+  padding: 6px 12px;
+  border-left: 3px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-sub);
+}
+
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* ===== 行内代码 ===== */
+.markdown-body code {
+  padding: 2px 5px;
+  margin: 0 1px;
+  background: rgba(74, 124, 255, 0.1);
+  color: #c7254e;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+/* ===== 代码块 ===== */
+.markdown-body pre {
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: #f6f8fa;
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  /* 代码块里必须保留换行和缩进 */
+  white-space: pre;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/* highlight.js 的主题给 pre.hljs 上色，这里让它跟上面的 pre 样式统一 */
+.markdown-body pre.hljs {
+  background: #f6f8fa;
+}
+
+/* ===== 表格 ===== */
+.markdown-body table {
+  width: 100%;
+  margin: 0 0 10px;
+  border-collapse: collapse;
+  font-size: 0.95em;
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: rgba(0, 0, 0, 0.03);
+  font-weight: 600;
+}
+
+.markdown-body tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+/* ===== 链接 ===== */
+.markdown-body a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body a:hover {
+  color: var(--primary-hover);
+}
+
+/* ===== 其他 ===== */
+.markdown-body hr {
+  margin: 14px 0;
+  border: none;
+  border-top: 1px solid var(--border-color);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.markdown-body strong {
+  font-weight: 600;
+}
+
+.markdown-body del {
+  color: var(--text-light);
+}
+
+/* ===== 「正在输入」光标 =====
+   样式放在全局，因为它是 v-html 注入的 span，scoped 样式匹配不到 */
+.cursor {
+  animation: cursor-blink 1s step-start infinite;
+  color: var(--accent);
+  margin-left: 1px;
+}
+
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}

@@ -1,8 +1,8 @@
 # 生产环境（微信云托管）配置
 # 与 application.yml 合并生效，同名配置项以本文件为准。
-# 前端只使用基础对话/智能体接口，因此生产环境：
-#   1. 不连接 PostgreSQL（排除数据源自动装配）
-#   2. 不启用 embedding 向量模型
+# 生产环境：
+#   1. 对话记忆持久化到云数据库 PostgreSQL（连接信息由环境变量注入）
+#   2. 不启用 embedding 向量模型（已移除 RAG）
 #   3. 不启用 MCP 客户端（不拉起搜图/搜视频子进程）
 #   4. 密钥通过环境变量注入，不打进镜像
 
@@ -13,18 +13,31 @@ server:
 spring:
   autoconfigure:
     exclude:
-      # —— 数据库：生产环境不使用 ——
-      # 不创建 HikariCP 数据源
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       # —— MCP 客户端：生产环境不启用搜图/搜视频 ——
       # stdio 传输（不再启动 mcp-search 子进程）、客户端连接、工具回调 Provider
       - org.springframework.ai.mcp.client.common.autoconfigure.StdioTransportAutoConfiguration
       - org.springframework.ai.mcp.client.common.autoconfigure.McpClientAutoConfiguration
       - org.springframework.ai.mcp.client.common.autoconfigure.McpToolCallbackAutoConfiguration
+  # —— 数据源：对话记忆持久化 ——
+  # 云数据库连接信息全部由环境变量注入，未设置时启动直接失败（fail fast）
+  datasource:
+    url: 'jdbc:postgresql://${PG_HOST}:${PG_PORT:5432}/${PG_DATABASE}'
+    username: ${PG_USERNAME}
+    password: ${PG_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: wc-ai-agent-pool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
   ai:
     openai:
-      # DashScope API Key，从环境变量注入（对话/ChatModel 仍需要）
-      api-key: ${DASHSCOPE_API_KEY}
+      # 大模型接入信息，全部从环境变量注入（未设置时启动直接失败）
+      api-key: ${AI_API_KEY}
+      base-url: ${AI_BASE_URL}
+      chat:
+        options:
+          model: ${AI_MODEL}
     model:
       # 关闭向量嵌入模型自动装配（生产环境不用 RAG）
       embedding: none

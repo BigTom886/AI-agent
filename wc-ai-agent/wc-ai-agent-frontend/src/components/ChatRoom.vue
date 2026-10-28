@@ -24,7 +24,7 @@
       <div v-if="messages.length === 0" class="chat-empty">
         <div class="empty-avatar">{{ icon }}</div>
         <p class="empty-title">{{ title }}</p>
-        <p class="empty-tip">{{ emptyTip }}</p>
+        <p class="empty-tip">{{ loadingHistory ? '正在加载历史记录…' : emptyTip }}</p>
       </div>
 
       <div
@@ -37,21 +37,27 @@
           {{ msg.role === 'user' ? '🧑' : icon }}
         </div>
         <div class="bubble" :class="msg.role === 'user' ? 'bubble-user' : 'bubble-ai'">
-          <span class="bubble-text">{{ msg.content }}</span>
-          <span v-if="msg.loading" class="cursor">▍</span>
+          <!-- 用户消息：原样显示，保留输入的换行 -->
+          <span v-if="msg.role === 'user'" class="bubble-text">{{ msg.content }}</span>
+          <!-- AI 消息：按 Markdown 渲染（标题、列表、代码块、表格……） -->
+          <MarkdownText v-else :content="msg.content" :streaming="msg.loading" />
         </div>
       </div>
     </main>
 
     <!-- 输入框区域 -->
     <footer class="chat-footer">
-      <input
+      <textarea
+        ref="inputRef"
         v-model="inputMessage"
         class="chat-input"
-        type="text"
-        :placeholder="loading ? 'AI 正在回复中，请稍候…' : '请输入你的问题，按回车发送'"
+        rows="1"
+        :placeholder="loading ? 'AI 正在回复中，请稍候…' : '请输入你的问题，Enter 发送，Shift+Enter 换行'"
         :disabled="loading"
-        @keydown.enter="sendMessage"
+        @input="autoResize"
+        @keydown="onKeydown"
+        @compositionstart="isComposing = true"
+        @compositionend="isComposing = false"
       />
       <button class="send-btn" :disabled="loading || !inputMessage.trim()" @click="sendMessage">
         {{ loading ? '回复中…' : '发送' }}
@@ -61,8 +67,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import MarkdownText from './MarkdownText.vue'
 
 const props = defineProps({
   // 页面标题
@@ -109,6 +116,24 @@ const props = defineProps({
     type: Function,
     default: null,
   },
+  /**
+   * 载入历史消息
+   *
+   * 组件挂载时调用一次，返回 [{ role: 'user' | 'ai', content: string }]。
+   * 返回空数组表示这个会话还没有历史。
+   */
+  loadHistory: {
+    type: Function,
+    default: null,
+  },
+  /**
+   * 用户发出消息时的回调（用于记录会话标题等）
+   * @param {string} message 用户消息原文
+   */
+  onUserMessage: {
+    type: Function,
+    default: null,
+  },
 })
 
 const router = useRouter()
@@ -117,7 +142,64 @@ const router = useRouter()
 const messages = ref([])
 const inputMessage = ref('')
 const loading = ref(false)
+const loadingHistory = ref(false)
 const chatBodyRef = ref(null)
+const inputRef = ref(null)
+
+// 载入历史消息：这个 chatId 之前聊过什么，刷新页面 / 重新登录后也要能看到
+onMounted(async () => {
+  if (!props.loadHistory) return
+  loadingHistory.value = true
+  try {
+    const list = await props.loadHistory()
+    if (Array.isArray(list) && list.length > 0) {
+      messages.value = list
+      scrollToBottom()
+    }
+  } catch (e) {
+    console.warn('加载历史记录失败：', e)
+  } finally {
+    loadingHistory.value = false
+  }
+})
+
+/**
+ * 是否正在用中文输入法打字
+ *
+ * 中文输入法在选词时，用户按的键其实是「确认候选词」，
+ * 如果这时候 Enter 直接发消息，用户会发现话只打了一半就发出去了。
+ * 所以组合期间要拦住 Enter，等 compositionend 之后才允许发送。
+ */
+const isComposing = ref(false)
+
+// 输入框随内容自适应高度（最多长到 5 行，再长就内部滚动）
+const MAX_INPUT_HEIGHT = 120
+
+const autoResize = () => {
+  const el = inputRef.value
+  if (!el) return
+  // 先归零再量，不然高度只会单调递增、缩不回去
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT) + 'px'
+  el.style.overflowY = el.scrollHeight > MAX_INPUT_HEIGHT ? 'auto' : 'hidden'
+}
+
+/**
+ * 回车发送，Shift+回车换行
+ *
+ * 用 exact 判断「没有按任何修饰键」，这样 Ctrl+Enter / Alt+Enter 也不会误触发。
+ */
+const onKeydown = (event) => {
+  if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) {
+    return
+  }
+  // 中文输入法选词中：让输入法处理，不发送
+  if (isComposing.value) {
+    return
+  }
+  event.preventDefault()
+  sendMessage()
+}
 
 // 当前 SSE 连接，用于中断
 let eventSource = null
@@ -149,7 +231,11 @@ const sendMessage = () => {
 
   // 添加用户消息
   messages.value.push({ role: 'user', content: message })
+  // 通知外部（比如记一下会话标题）
+  if (props.onUserMessage) props.onUserMessage(message)
   inputMessage.value = ''
+  // 等 v-model 把新值同步到 DOM 后，再把输入框缩回单行
+  nextTick(autoResize)
 
   // 添加 AI 占位消息，后续流式填充
   // 注意：必须用 reactive 包裹，否则直接修改原始对象不会触发视图更新
@@ -159,7 +245,9 @@ const sendMessage = () => {
   scrollToBottom()
 
   // 通过 EventSource 调用 SSE 接口，实时接收对话内容
-  eventSource = new EventSource(props.buildSseUrl(message))
+  // 对话接口要求登录：同源请求会自动带 JSESSIONID，
+  // withCredentials 是为了兼容前后端跨域部署的情况
+  eventSource = new EventSource(props.buildSseUrl(message), { withCredentials: true })
 
   eventSource.onmessage = (event) => {
     if (event.data === '[DONE]') {
@@ -193,6 +281,7 @@ const resetSession = () => {
   closeEventSource()
   messages.value = []
   inputMessage.value = ''
+  nextTick(autoResize)
   loading.value = false
   if (props.onReset) props.onReset()
 }
@@ -377,22 +466,20 @@ const goHome = () => {
   color: var(--text-main);
   border-top-left-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  /* AI 气泡走 Markdown 渲染：不能继承 pre-wrap，
+     否则 v-html 里的 HTML 源码缩进和换行会变成可见空白 */
+  white-space: normal;
 }
 
-.cursor {
-  animation: blink 1s step-start infinite;
-  color: var(--accent);
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
-}
+/* 「正在输入」光标的样式在 assets/markdown.css 里（全局）——
+   因为它是被 v-html 注入的 span，scoped 样式匹配不到 */
 
 /* 输入框区域 */
 .chat-footer {
   display: flex;
+  /* 输入框会随内容变高，发送按钮跟着长高会很难看 —— 改成底部对齐，
+     按钮保持固定高度 */
+  align-items: flex-end;
   gap: 12px;
   padding: 14px 20px;
   border-top: 1px solid var(--border-color);
@@ -403,13 +490,18 @@ const goHome = () => {
 .chat-input {
   flex: 1;
   min-width: 0;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: 1px solid #dfe3ea;
   border-radius: 10px;
   font-size: 14px;
+  line-height: 1.5;
   outline: none;
   transition: border-color 0.2s;
   background: var(--bg-chat);
+  /* 高度由脚本按内容调整，用户不能手动拖拽 */
+  resize: none;
+  /* 初始隐藏溢出；内容超过上限时脚本会切成 auto 出现滚动条 */
+  overflow-y: hidden;
 }
 
 .chat-input:focus {
@@ -419,6 +511,11 @@ const goHome = () => {
 
 .send-btn {
   padding: 0 24px;
+  /* 与单行输入框同高（10px*2 padding + 14px*1.5 行高 + 2px 边框 ≈ 43px） */
+  height: 43px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 10px;
   background: var(--accent);
   color: #fff;

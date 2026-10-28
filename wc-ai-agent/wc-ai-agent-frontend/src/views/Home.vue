@@ -1,6 +1,23 @@
 <template>
   <div class="home">
     <div class="home-bg-gradient"></div>
+
+    <!-- 右上角：登录态 / 用户菜单 -->
+    <nav class="home-topbar">
+      <template v-if="auth.user">
+        <router-link class="user-chip" to="/profile" title="个人资料">
+          👤 {{ auth.user.nickname }}
+        </router-link>
+        <button class="topbar-btn" :disabled="loggingOut" @click="handleLogout">
+          {{ loggingOut ? '退出中…' : '退出' }}
+        </button>
+      </template>
+      <template v-else>
+        <router-link class="topbar-btn" to="/login">登录</router-link>
+        <router-link class="topbar-btn primary" to="/register">注册</router-link>
+      </template>
+    </nav>
+
     <header class="home-header">
       <div class="logo">🤖</div>
       <h1>AI 应用中心</h1>
@@ -32,11 +49,20 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { generateChatId } from '../utils/chatId'
+import { authState, logout } from '../utils/auth'
 
 const router = useRouter()
 const year = new Date().getFullYear()
+const auth = authState
+const loggingOut = ref(false)
+
+const handleLogout = async () => {
+  loggingOut.value = true
+  await logout()
+  loggingOut.value = false
+}
 
 const appList = [
   {
@@ -57,8 +83,6 @@ const appList = [
   },
 ]
 
-// 预生成一个聊天室 id，供聊天页使用（刷新主页会重新生成）
-generateChatId()
 </script>
 
 <style scoped>
@@ -72,6 +96,70 @@ generateChatId()
 }
 
 /* 浪漫渐变背景 */
+/* 右上角登录态 / 用户菜单 */
+.home-topbar {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 3;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 180px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-main);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.user-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.topbar-btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(74, 124, 255, 0.25);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.topbar-btn:hover:not(:disabled) {
+  background: rgba(74, 124, 255, 0.08);
+}
+
+.topbar-btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.topbar-btn.primary:hover {
+  background: var(--primary-hover);
+}
+
+.topbar-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .home-bg-gradient {
   position: fixed;
   inset: 0;
@@ -274,8 +362,23 @@ generateChatId()
 
 /* ===== 手机适配 ===== */
 @media (max-width: 480px) {
+  .home-topbar {
+    top: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+
+  .user-chip {
+    max-width: 130px;
+    padding: 7px 12px;
+  }
+
+  .topbar-btn {
+    padding: 7px 12px;
+  }
+
   .home-header {
-    padding: 32px 16px 20px;
+    padding: 72px 16px 20px;
   }
 
   .home-header h1 {

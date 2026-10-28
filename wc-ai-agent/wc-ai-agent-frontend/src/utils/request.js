@@ -7,6 +7,9 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 const request = axios.create({
   baseURL,
   timeout: 30000,
+  // 登录态靠 HttpSession Cookie；同源请求默认就会带，
+  // 这里显式打开是为了兼容 VITE_API_BASE_URL 指向跨域后端的部署方式
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,7 +28,10 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    console.error('请求出错：', error)
+    // 401 是「未登录 / 会话过期」的正常分支，由路由守卫和页面自己处理，不必刷错误日志
+    if (error.response?.status !== 401) {
+      console.error('请求出错：', error)
+    }
     return Promise.reject(error)
   }
 )

@@ -5,7 +5,19 @@
 spring:
   ai:
     openai:
-      api-key: sk-你的新DashScope密钥
+      # 任何 OpenAI 兼容服务商都行：填你的 key，必要时再补 base-url / model
+      api-key: 你的大模型API密钥
+      # 必填：你的服务商地址（OpenAI 兼容模式）
+      base-url: https://你的服务商/v1
+      chat:
+        options:
+          # 必填：模型 id
+          model: 你的模型名
+  # —— 对话记忆数据库（PostgreSQL）——
+  # 填你本地的 PostgreSQL 账号密码；库名默认 wc_ai_agent，首次启动会自动建表
+  datasource:
+    username: postgres
+    password: 你的PostgreSQL密码
 
 search-api:
   api-key: 你的新SearchAPI密钥

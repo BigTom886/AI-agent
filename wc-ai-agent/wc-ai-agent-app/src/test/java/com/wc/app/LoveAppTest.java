@@ -30,7 +30,11 @@ public class LoveAppTest {
         // String result = loveApp.doChat("你好，我是韩跑跑", "001");
         // System.out.println("AI 回复：" + result);
 
-        String result1 = loveApp.doChat("我是谁？", "001");
+        // chatId 必须是 UUID（接口层会做格式校验）
+        String chatId = UUID.randomUUID().toString();
+
+        // userId 决定这次对话用哪份跨会话画像；还没接登录体系时传 null 即可
+        String result1 = loveApp.doChat("我是谁？", chatId, null);
         // System.out.println("AI 回复：" + result1);
 
         /*
@@ -52,13 +56,13 @@ public class LoveAppTest {
         String chatId = UUID.randomUUID().toString();
         // 第一轮
         String message = "你好，我是豆包，我想让另一半（用户）更爱我，但我不知道该怎么做";
-        LoveApp.LoveReport loveReport = loveApp.generateLoveReport(message, chatId);
+        LoveReport loveReport = loveApp.generateLoveReport(message, chatId, null);
         Assertions.assertNotNull(loveReport);
     }
 
     private void testMessage(String message) {
         String chatId = UUID.randomUUID().toString();
-        String answer = loveApp.doChatWithTools(message, chatId);
+        String answer = loveApp.doChatWithTools(message, chatId, null);
         Assertions.assertNotNull(answer);
     }
 
