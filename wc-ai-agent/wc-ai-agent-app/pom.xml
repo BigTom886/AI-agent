@@ -41,29 +41,19 @@
         </dependency>
 
         <!--
-            RAG（检索增强生成）：Spring AI 1.0 起把 RAG / 向量库相关类从 spring-ai-core 拆成了独立模块，
-            不显式引入的话 com.wc.rag 包会整片报红（org.springframework.ai.rag / vectorstore 找不到）。
+            RAG（检索增强生成）：Spring AI 1.0 起把向量库相关类从 spring-ai-core 拆成了独立模块，
+            不显式引入的话 com.wc.rag 包会整片报红（org.springframework.ai.vectorstore 找不到）。
             版本统一由父 POM 的 spring-ai-bom (1.1.8) 管理，这里不要写 version。
         -->
-        <!-- Query / QueryTransformer / RewriteQueryTransformer / MultiQueryExpander / RetrievalAugmentationAdvisor -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-rag</artifactId>
-        </dependency>
-        <!-- VectorStore / SimpleVectorStore / FilterExpressionBuilder 等向量库通用 API -->
+        <!-- VectorStore / SearchRequest / Document 等向量库通用 API -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-vector-store</artifactId>
         </dependency>
-        <!-- PgVectorStore（PostgreSQL + pgvector 扩展） -->
+        <!-- PgVectorStore（PostgreSQL + pgvector 扩展）：知识库就存在这个向量库里 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-pgvector-store</artifactId>
-        </dependency>
-        <!-- MarkdownDocumentReader：把 classpath:document/*.md 解析成 Document -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-markdown-document-reader</artifactId>
         </dependency>
 
         <!--

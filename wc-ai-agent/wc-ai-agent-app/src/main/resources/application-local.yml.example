@@ -13,6 +13,14 @@ spring:
         options:
           # 必填：模型 id
           model: 你的模型名
+      # RAG 的 embedding 模型（和聊天模型可以不是同一个服务商）：
+      # 知识库是 text-embedding-v3（1024 维）向量化后存进 pgvector 的，
+      # 提问时必须用同一个模型向量化，模型名要和当初灌库时一致
+      embedding:
+        api-key: 你的embedding模型密钥
+        # base-url: https://dashscope.aliyuncs.com/compatible-mode
+        # options:
+        #   model: text-embedding-v3
   # —— 对话记忆数据库（PostgreSQL）——
   # 填你本地的 PostgreSQL 账号密码；库名默认 wc_ai_agent，首次启动会自动建表
   datasource:

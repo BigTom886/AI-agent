@@ -2,7 +2,8 @@
 # 与 application.yml 合并生效，同名配置项以本文件为准。
 # 生产环境：
 #   1. 对话记忆持久化到云数据库 PostgreSQL（连接信息由环境变量注入）
-#   2. 不启用 embedding 向量模型（已移除 RAG）
+#   2. RAG 检索增强照常启用：知识库在云数据库的 vector_store 表里，
+#      要求云数据库装了 pgvector 扩展，且该表里已有向量化好的知识库
 #   3. 不启用 MCP 客户端（不拉起搜图/搜视频子进程）
 #   4. 密钥通过环境变量注入，不打进镜像
 
@@ -38,9 +39,15 @@ spring:
       chat:
         options:
           model: ${AI_MODEL}
+      # embedding（RAG 用）：必须和灌知识库时是同一个模型，否则检索不到东西
+      embedding:
+        api-key: ${EMBEDDING_API_KEY}
+        base-url: ${EMBEDDING_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+        options:
+          model: ${EMBEDDING_MODEL:text-embedding-v3}
     model:
-      # 关闭向量嵌入模型自动装配（生产环境不用 RAG）
-      embedding: none
+      # RAG 必开
+      embedding: openai
 
 # 联网搜索工具的密钥，从环境变量注入
 search-api:

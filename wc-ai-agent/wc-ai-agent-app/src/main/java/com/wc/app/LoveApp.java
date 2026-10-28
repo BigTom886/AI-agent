@@ -23,6 +23,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import com.wc.demo.invoke.LoggingAdvisor;
+import com.wc.rag.LoveAppKnowledgeTools;
 import com.wc.userprofile.UserProfileAdvisor;
 import com.wc.userprofile.UserProfileTools;
 
@@ -84,6 +85,15 @@ public class LoveApp {
         private final ToolCallback[] profileToolCallbacks;
 
         /**
+         * 知识库检索工具的回调 —— 让模型自己决定「这次要不要查知识库」。
+         *
+         * <p>
+         * 单独一组，不混进 allTools：allTools 也会喂给 YuManus 智能体，
+         * 而 YuManus 执行工具调用时没有 toolContext，带 ToolContext 参数的工具在那里会报错。
+         */
+        private final ToolCallback[] knowledgeToolCallbacks;
+
+        /**
          * 系统提示词 —— 定义 AI 的角色和行为规范 通过 ChatClient.builder().defaultSystem() 设置，每次对话都会自动携带
          * 从 classpath:prompts/love-master-system.md 加载，改提示词无需重新编译
          */
@@ -121,12 +131,15 @@ public class LoveApp {
          * @param chatMemory 对话记忆实现（持久化到 PostgreSQL）
          * @param userProfileAdvisor 用户画像 Advisor（把跨会话画像注入系统提示词）
          * @param userProfileTools 用户画像工具（@Tool 注解）
+         * @param knowledgeTools 知识库检索工具（@Tool 注解，模型自己决定要不要查）
          */
         public LoveApp(ChatModel chatModel, ChatMemory chatMemory,
-                        UserProfileAdvisor userProfileAdvisor, UserProfileTools userProfileTools) {
+                        UserProfileAdvisor userProfileAdvisor, UserProfileTools userProfileTools,
+                        LoveAppKnowledgeTools knowledgeTools) {
 
                 this.chatMemory = chatMemory;
                 this.profileToolCallbacks = ToolCallbacks.from(userProfileTools);
+                this.knowledgeToolCallbacks = ToolCallbacks.from(knowledgeTools);
 
                 this.chatClient = ChatClient.builder(chatModel)
                                 // 设置默认系统提示词，定义 AI 的角色和行为
@@ -306,12 +319,16 @@ public class LoveApp {
          */
         private ChatClientRequestSpec prepare(String userText, String chatId, String userId) {
                 return chatClient.prompt().user(userText)
-                                // 会话 ID：MessageChatMemoryAdvisor 靠它存取记忆
-                                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, chatId)
-                                                // 用户 ID：UserProfileAdvisor 靠它读画像
-                                                .param(UserProfileAdvisor.USER_ID, effectiveUserId(userId)))
+                                .advisors(a -> {
+                                        // 会话 ID：MessageChatMemoryAdvisor 靠它存取记忆
+                                        a.param(ChatMemory.CONVERSATION_ID, chatId)
+                                                        // 用户 ID：UserProfileAdvisor 靠它读画像
+                                                        .param(UserProfileAdvisor.USER_ID, effectiveUserId(userId));
+                                })
                                 // 画像工具：模型自己决定什么时候调用
                                 .toolCallbacks(profileToolCallbacks)
+                                // 知识库工具：模型自己决定这次要不要查恋爱知识库
+                                .toolCallbacks(knowledgeToolCallbacks)
                                 // ToolContext：调用工具时由 Spring AI 注入给工具方法，
                                 // 工具方法靠它拿到「当前是哪个用户」
                                 .toolContext(Map.of(UserProfileTools.USER_ID, effectiveUserId(userId)));

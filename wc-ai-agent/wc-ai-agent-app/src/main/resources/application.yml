@@ -47,9 +47,17 @@ spring:
       chat:
         options:
           model: ${AI_MODEL}
+      # embedding 可以和聊天用不同服务商：这里默认走阿里百炼（DashScope）的 OpenAI 兼容模式，
+      # text-embedding-v3 输出 1024 维，和知识库里已有向量维度一致
+      embedding:
+        api-key: ${EMBEDDING_API_KEY}
+        base-url: ${EMBEDDING_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+        options:
+          model: ${EMBEDDING_MODEL:text-embedding-v3}
     model:
-      # 项目已移除 RAG / 向量库，不再需要 embedding 模型
-      embedding: none
+      # embedding 模型（RAG 必需）：知识库已经向量化存进 pgvector，
+      # 提问时要把问题用「同一个模型」向量化，否则向量空间对不上、检索全是噪声
+      embedding: openai
     mcp:
       client:
         # 本地 stdio 连接：由本应用自动拉起 MCP 服务端子进程（java -jar），
@@ -140,5 +148,11 @@ love:
   profile:
     # 画像最多保存多少条，超出丢掉最旧的（防止画像无限膨胀吃掉提示词）
     max-items: 30
+  # —— RAG 检索增强（知识库）——
+  rag:
+    # 一次检索召回几个文档片段
+    top-k: 3
+    # 相似度阈值（0~1，越高越严格，召回越少）
+    similarity-threshold: 0.5
 
 
